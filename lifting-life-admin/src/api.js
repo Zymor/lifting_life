@@ -1,5 +1,5 @@
 const API_BASE = import.meta.env?.VITE_API_URL || 
-  (typeof window !== 'undefined' && window.location.port !== '4000' && window.location.port !== '3000'
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost' && window.location.port !== '4000' && window.location.port !== '3000'
     ? 'http://localhost:4000/api'
     : '/api');
 

@@ -693,6 +693,7 @@ adminApiRouter.post('/invitations', requireRole('super_admin', 'admin'), (req, r
     details: { email: cleanEmail, role }
   });
 
+  const adminBaseUrl = (process.env.ADMIN_FRONTEND_URL || process.env.ADMIN_URL || 'http://localhost:3000').replace(/\/$/, '');
   return res.status(201).json({
     message: `Invitation generated for ${cleanEmail}.`,
     invitation: {
@@ -700,7 +701,7 @@ adminApiRouter.post('/invitations', requireRole('super_admin', 'admin'), (req, r
       email: cleanEmail,
       role,
       token,
-      inviteLink: `http://localhost:3000/accept-invite?token=${token}`
+      inviteLink: `${adminBaseUrl}/accept-invite?token=${token}`
     }
   });
 });
