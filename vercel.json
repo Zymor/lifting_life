@@ -12,41 +12,25 @@
       "bindings": [
         {
           "type": "service",
-          "service": "api",
-          "format": "url",
-          "env": "OPENGYM_API_URL"
-        },
-        {
-          "type": "service",
           "service": "lifting-life-admin",
           "format": "url",
           "env": "ADMIN_FRONTEND_URL"
         }
       ]
-    },
-    "api": {
-      "root": "openGym-main/api",
-      "runtime": "node",
-      "entrypoint": "server.js"
-    },
-    "frontend": {
-      "root": "openGym-main/frontend",
-      "framework": "vite"
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": {
-        "service": "api"
+        "service": "lifting-life-backend"
       }
     },
     {
       "source": "/(.*)",
       "destination": {
-        "service": "frontend"
+        "service": "lifting-life-admin"
       }
     }
   ]
 }
-
