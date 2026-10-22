@@ -1,0 +1,19 @@
+LIFTING LIFE
+Train. Progress. Compete. Inspire.
+
+Verify Your Email Address
+
+Welcome to Lifting Life!
+You're one step away from starting your fitness journey.
+Use the verification code below to confirm your email address and activate your account.
+
+Verification Code:
+{{ .Token }}
+
+This code will expire in 10 minutes.
+
+If you didn't create a Lifting Life account, you can safely ignore this email.
+
+© Lifting Life
+Train Smarter. Lift Stronger.
+
