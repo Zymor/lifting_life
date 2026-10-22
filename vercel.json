@@ -27,15 +27,7 @@
     "api": {
       "root": "openGym-main/api",
       "runtime": "node",
-      "entrypoint": "server.js",
-      "bindings": [
-        {
-          "type": "service",
-          "service": "lifting-life-backend",
-          "format": "url",
-          "env": "LIFTING_LIFE_BACKEND_URL"
-        }
-      ]
+      "entrypoint": "server.js"
     },
     "frontend": {
       "root": "openGym-main/frontend",
