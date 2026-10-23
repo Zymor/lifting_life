@@ -1,0 +1,380 @@
+{
+  "version": "2.0.0",
+  "baseModelPath": "assets/models/lifting_life_anatomy.glb",
+  "referenceFallbackImagePath": "assets/images/anatomy_reference.png",
+  "colorSystem": {
+    "primaryTargetMuscle": "#39FF14",
+    "secondaryAssistingMuscle": "#9DDF91",
+    "otherMuscles": "#6B7280"
+  },
+  "muscles": {
+    "Pectoralis Major": {
+      "id": "pectoralis_major",
+      "name": "Pectoralis Major",
+      "anatomicalLocation": "Anterior upper chest wall (clavicular and sternocostal heads, inserting into the bicipital groove of the humerus)",
+      "mainFunction": "Helps move the upper arm across the body (horizontal adduction), flexes the shoulder, and internally rotates the humerus during pressing movements.",
+      "relatedExercises": [
+        "Barbell Bench Press",
+        "Incline Dumbbell Bench Press",
+        "Cable Chest Fly",
+        "Weighted Chest Dip"
+      ]
+    },
+    "Deltoids": {
+      "id": "deltoids",
+      "name": "Deltoids (Anterior, Lateral & Posterior)",
+      "anatomicalLocation": "Caps the glenohumeral shoulder joint across the clavicle, acromion, and spine of the scapula",
+      "mainFunction": "Abducts, flexes, and extends the humerus to raise and stabilize the arm overhead and laterally.",
+      "relatedExercises": [
+        "Standing Barbell Overhead Press",
+        "Dumbbell Lateral Raise",
+        "Seated Dumbbell Shoulder Press",
+        "Rope Face Pull"
+      ]
+    },
+    "Biceps Brachii": {
+      "id": "biceps_brachii",
+      "name": "Biceps Brachii",
+      "anatomicalLocation": "Anterior compartment of the upper arm between the scapula and the radial tuberosity",
+      "mainFunction": "Flexes the elbow joint and supinates the forearm during curling and pulling movements.",
+      "relatedExercises": [
+        "Standing Barbell Biceps Curl",
+        "Incline Dumbbell Curl",
+        "Hammer Dumbbell Curl",
+        "Weighted Pull-Up"
+      ]
+    },
+    "Triceps Brachii": {
+      "id": "triceps_brachii",
+      "name": "Triceps Brachii (Long, Lateral & Medial Heads)",
+      "anatomicalLocation": "Posterior compartment of the upper arm inserting into the olecranon process of the ulna",
+      "mainFunction": "Extends the elbow joint and locks out the arm during pressing and pushdown exercises.",
+      "relatedExercises": [
+        "Cable Rope Triceps Pushdown",
+        "EZ-Bar Skull Crusher",
+        "Barbell Bench Press",
+        "Overhead Cable Triceps Extension"
+      ]
+    },
+    "Brachioradialis": {
+      "id": "brachioradialis",
+      "name": "Brachioradialis & Forearm Flexors",
+      "anatomicalLocation": "Lateral and anterior forearm spanning from the lateral supracondylar ridge of the humerus to the distal radius",
+      "mainFunction": "Generates crushing grip strength, stabilizes the wrist, and assists with elbow flexion.",
+      "relatedExercises": [
+        "Hammer Dumbbell Curl",
+        "Conventional Barbell Deadlift",
+        "Standing Barbell Biceps Curl",
+        "Weighted Pull-Up"
+      ]
+    },
+    "Rectus Abdominis & Obliques": {
+      "id": "rectus_abdominis",
+      "name": "Rectus Abdominis & External Obliques",
+      "anatomicalLocation": "Anterior and lateral abdominal wall spanning from the costal cartilages to the pubic crest and iliac crest",
+      "mainFunction": "Creates 360-degree intra-abdominal bracing pressure to protect the lumbar spine and flexes/rotates the trunk.",
+      "relatedExercises": [
+        "Hanging Leg Raise",
+        "Kneeling Cable Crunch",
+        "Ab Wheel Rollout",
+        "Barbell Back Squat"
+      ]
+    },
+    "Trapezius & Rhomboids": {
+      "id": "trapezius",
+      "name": "Trapezius & Rhomboids",
+      "anatomicalLocation": "Upper and mid-posterior thoracic back spanning from the occipital bone and spinous processes to the scapula",
+      "mainFunction": "Retracts, elevates, and depresses the scapulae to stabilize the upper back under heavy loads.",
+      "relatedExercises": [
+        "Bent-Over Barbell Row",
+        "Conventional Barbell Deadlift",
+        "Rope Face Pull",
+        "Barbell Shrug"
+      ]
+    },
+    "Latissimus Dorsi": {
+      "id": "latissimus_dorsi",
+      "name": "Latissimus Dorsi",
+      "anatomicalLocation": "Broad posterolateral back spanning from the thoracolumbar fascia and iliac crest to the intertubercular sulcus of the humerus",
+      "mainFunction": "Adducts, extends, and internally rotates the shoulder during vertical and horizontal pulling movements.",
+      "relatedExercises": [
+        "Weighted Pull-Up",
+        "Wide-Grip Cable Lat Pulldown",
+        "Bent-Over Barbell Row",
+        "Seated Cable Row"
+      ]
+    },
+    "Erector Spinae": {
+      "id": "erector_spinae",
+      "name": "Erector Spinae (Spinal Erectors)",
+      "anatomicalLocation": "Paired paraspinal columns running along the lumbar and thoracic vertebrae",
+      "mainFunction": "Extends the vertebral column and maintains rigid neutral spine alignment against forward shear forces.",
+      "relatedExercises": [
+        "Conventional Barbell Deadlift",
+        "Romanian Deadlift (RDL)",
+        "Barbell Back Squat",
+        "Bent-Over Barbell Row"
+      ]
+    },
+    "Gluteus Maximus & Medius": {
+      "id": "gluteus_maximus",
+      "name": "Gluteus Maximus & Medius",
+      "anatomicalLocation": "Posterior pelvis spanning from the ilium and sacrum to the gluteal tuberosity and iliotibial tract",
+      "mainFunction": "Powerfully extends and externally rotates the hip joint while stabilizing pelvic alignment.",
+      "relatedExercises": [
+        "Barbell Hip Thrust",
+        "Barbell Back Squat",
+        "Conventional Barbell Deadlift",
+        "Romanian Deadlift (RDL)"
+      ]
+    },
+    "Quadriceps": {
+      "id": "quadriceps",
+      "name": "Quadriceps Femoris (Rectus Femoris, Vastus Lateralis, Medialis & Intermedius)",
+      "anatomicalLocation": "Anterior thigh compartment inserting via the patellar tendon into the tibial tuberosity",
+      "mainFunction": "Extends the knee joint and controls eccentric knee flexion during squats, leg presses, and lunges.",
+      "relatedExercises": [
+        "Barbell Back Squat",
+        "45-Degree Sled Leg Press",
+        "Bulgarian Split Squat",
+        "Seated Leg Extension"
+      ]
+    },
+    "Adductors": {
+      "id": "adductors",
+      "name": "Adductor Magnus & Longus",
+      "anatomicalLocation": "Medial compartment of the thigh spanning from the pubis and ischium to the linea aspera of the femur",
+      "mainFunction": "Adducts the thigh and assists with hip extension out of the bottom of a deep squat.",
+      "relatedExercises": [
+        "Barbell Back Squat",
+        "Sumo Barbell Deadlift",
+        "45-Degree Sled Leg Press",
+        "Bulgarian Split Squat"
+      ]
+    },
+    "Hamstrings": {
+      "id": "hamstrings",
+      "name": "Hamstrings (Biceps Femoris, Semitendinosus & Semimembranosus)",
+      "anatomicalLocation": "Posterior compartment of the thigh spanning from the ischial tuberosity to the proximal tibia and fibula",
+      "mainFunction": "Extends the hip during hinge movements and flexes the knee joint.",
+      "relatedExercises": [
+        "Romanian Deadlift (RDL)",
+        "Conventional Barbell Deadlift",
+        "Seated Hamstring Leg Curl",
+        "Barbell Back Squat"
+      ]
+    },
+    "Gastrocnemius & Soleus": {
+      "id": "gastrocnemius_soleus",
+      "name": "Gastrocnemius & Soleus (Calves)",
+      "anatomicalLocation": "Posterior lower leg inserting via the Achilles tendon into the calcaneus (heel bone)",
+      "mainFunction": "Plantarflexes the ankle joint to propel the body upward during calf raises, walking, and jumping.",
+      "relatedExercises": [
+        "Standing Machine Calf Raise",
+        "Seated Calf Raise",
+        "Barbell Back Squat",
+        "45-Degree Sled Leg Press"
+      ]
+    },
+    "Tibialis Anterior": {
+      "id": "tibialis_anterior",
+      "name": "Tibialis Anterior",
+      "anatomicalLocation": "The tibialis anterior is located at the front of the lower leg, lateral to the tibia.",
+      "mainFunction": "Helps with dorsiflexion of the ankle and stabilizes the foot and knee during movements like squats, walks, and jumps.",
+      "relatedExercises": [
+        "Barbell Tibialis Raise",
+        "Barbell Back Squat",
+        "Bulgarian Split Squat",
+        "Standing Machine Calf Raise"
+      ]
+    }
+  },
+  "exercises": {
+    "ex_bb_back_squat": {
+      "name": "Barbell Back Squat",
+      "animationPath": "assets/animations/squat.glb",
+      "primaryMuscles": ["Quadriceps", "Gluteus Maximus"],
+      "secondaryMuscles": ["Hamstrings", "Adductors", "Rectus Abdominis"],
+      "otherMuscles": ["Calves", "Lower back", "Upper body (stabilizer)"],
+      "phases": ["START", "SQUAT DOWN", "BOTTOM", "SQUAT UP", "FINISH"],
+      "variations": [
+        "Barbell Back Squat",
+        "Dumbbell Goblet Squat",
+        "Front Squat",
+        "45-Degree Sled Leg Press",
+        "Bulgarian Split Squat"
+      ]
+    },
+    "ex_bb_bench_press": {
+      "name": "Barbell Bench Press",
+      "animationPath": "assets/animations/bench_press.glb",
+      "primaryMuscles": ["Pectoralis Major"],
+      "secondaryMuscles": ["Triceps Brachii", "Anterior Deltoid"],
+      "otherMuscles": ["Latissimus Dorsi (stabilizer)", "Core", "Forearms"],
+      "phases": ["START", "LOWER BAR", "CHEST TOUCH", "PRESS UP", "LOCKOUT"],
+      "variations": [
+        "Barbell Bench Press",
+        "Incline Dumbbell Bench Press",
+        "Cable Chest Fly",
+        "Weighted Chest Dip"
+      ]
+    },
+    "ex_conventional_deadlift": {
+      "name": "Conventional Barbell Deadlift",
+      "animationPath": "assets/animations/deadlift.glb",
+      "primaryMuscles": ["Gluteus Maximus", "Hamstrings", "Erector Spinae"],
+      "secondaryMuscles": ["Quadriceps", "Latissimus Dorsi", "Trapezius", "Forearms"],
+      "otherMuscles": ["Calves", "Core Bracing"],
+      "phases": ["SETUP", "FLOOR PULL", "KNEE PASS", "HIP DRIVE", "LOCKOUT"],
+      "variations": [
+        "Conventional Barbell Deadlift",
+        "Sumo Barbell Deadlift",
+        "Romanian Deadlift (RDL)"
+      ]
+    },
+    "ex_overhead_press": {
+      "name": "Standing Barbell Overhead Press",
+      "animationPath": "assets/animations/overhead_press.glb",
+      "primaryMuscles": ["Anterior Deltoid", "Lateral Deltoid"],
+      "secondaryMuscles": ["Triceps Brachii", "Upper Pectorals", "Core"],
+      "otherMuscles": ["Glutes (stabilizer)", "Upper Traps"],
+      "phases": ["RACK START", "PRESS UP", "HEAD CLEAR", "LOCKOUT", "RETURN"],
+      "variations": [
+        "Standing Barbell Overhead Press",
+        "Seated Dumbbell Shoulder Press",
+        "Dumbbell Lateral Raise"
+      ]
+    },
+    "ex_pull_up": {
+      "name": "Weighted Pull-Up",
+      "animationPath": "assets/animations/pull_up.glb",
+      "primaryMuscles": ["Latissimus Dorsi", "Teres Major"],
+      "secondaryMuscles": ["Biceps Brachii", "Rhomboids", "Core"],
+      "otherMuscles": ["Forearms", "Posterior Deltoid"],
+      "phases": ["DEAD HANG", "SCAPULAR PULL", "TOP CHIN", "LOWER DOWN", "FINISH"],
+      "variations": [
+        "Weighted Pull-Up",
+        "Wide-Grip Cable Lat Pulldown",
+        "Bent-Over Barbell Row"
+      ]
+    },
+    "ex_lat_pulldown": {
+      "name": "Wide-Grip Cable Lat Pulldown",
+      "animationPath": "assets/animations/lat_pulldown.glb",
+      "primaryMuscles": ["Latissimus Dorsi"],
+      "secondaryMuscles": ["Biceps Brachii", "Middle Trapezius", "Rear Deltoid"],
+      "otherMuscles": ["Forearms", "Core"],
+      "phases": ["STRETCH", "PULL DOWN", "CHEST PEAK", "CONTROL UP", "FINISH"],
+      "variations": [
+        "Wide-Grip Cable Lat Pulldown",
+        "Weighted Pull-Up",
+        "Seated Cable Row"
+      ]
+    },
+    "ex_barbell_row": {
+      "name": "Bent-Over Barbell Row",
+      "animationPath": "assets/animations/barbell_row.glb",
+      "primaryMuscles": ["Latissimus Dorsi", "Rhomboids", "Middle Trapezius"],
+      "secondaryMuscles": ["Posterior Deltoid", "Biceps Brachii", "Erector Spinae"],
+      "otherMuscles": ["Hamstrings (isometric)", "Forearms"],
+      "phases": ["HINGE HANG", "ROW PULL", "PEAK SQUEEZE", "ECCENTRIC", "FINISH"],
+      "variations": [
+        "Bent-Over Barbell Row",
+        "Seated Cable Row",
+        "Wide-Grip Cable Lat Pulldown"
+      ]
+    },
+    "ex_barbell_curl": {
+      "name": "Standing Barbell Biceps Curl",
+      "animationPath": "assets/animations/dumbbell_curl.glb",
+      "primaryMuscles": ["Biceps Brachii"],
+      "secondaryMuscles": ["Brachialis", "Brachioradialis"],
+      "otherMuscles": ["Anterior Deltoid (stabilizer)", "Core"],
+      "phases": ["START", "CURL UP", "PEAK SQUEEZE", "LOWER SLOW", "FINISH"],
+      "variations": [
+        "Standing Barbell Biceps Curl",
+        "Incline Dumbbell Curl",
+        "Hammer Dumbbell Curl"
+      ]
+    },
+    "ex_tricep_pushdown": {
+      "name": "Cable Rope Triceps Pushdown",
+      "animationPath": "assets/animations/triceps_pushdown.glb",
+      "primaryMuscles": ["Triceps Brachii (Lateral & Medial Heads)"],
+      "secondaryMuscles": ["Anconeus", "Core Stabilizers"],
+      "otherMuscles": ["Forearms", "Latissimus Dorsi (stabilizer)"],
+      "phases": ["START 90°", "PRESS DOWN", "ROPE FLARE", "RETURN UP", "FINISH"],
+      "variations": [
+        "Cable Rope Triceps Pushdown",
+        "EZ-Bar Skull Crusher",
+        "Weighted Chest Dip"
+      ]
+    },
+    "ex_lateral_raise": {
+      "name": "Dumbbell Lateral Raise",
+      "animationPath": "assets/animations/lateral_raise.glb",
+      "primaryMuscles": ["Lateral Deltoid"],
+      "secondaryMuscles": ["Anterior Deltoid", "Supraspinatus", "Upper Traps"],
+      "otherMuscles": ["Forearms", "Core"],
+      "phases": ["START", "RAISE OUT", "SHOULDER PEAK", "LOWER DOWN", "FINISH"],
+      "variations": [
+        "Dumbbell Lateral Raise",
+        "Standing Barbell Overhead Press",
+        "Rope Face Pull"
+      ]
+    },
+    "ex_leg_press": {
+      "name": "45-Degree Sled Leg Press",
+      "animationPath": "assets/animations/leg_press.glb",
+      "primaryMuscles": ["Quadriceps", "Gluteus Maximus"],
+      "secondaryMuscles": ["Hamstrings", "Adductors"],
+      "otherMuscles": ["Calves"],
+      "phases": ["LOCKED SLED", "LOWER SLED", "DEEP 90°", "DRIVE UP", "FINISH"],
+      "variations": [
+        "45-Degree Sled Leg Press",
+        "Barbell Back Squat",
+        "Bulgarian Split Squat"
+      ]
+    },
+    "ex_romanian_deadlift": {
+      "name": "Romanian Deadlift (RDL)",
+      "animationPath": "assets/animations/romanian_deadlift.glb",
+      "primaryMuscles": ["Hamstrings", "Gluteus Maximus"],
+      "secondaryMuscles": ["Erector Spinae", "Latissimus Dorsi", "Forearms"],
+      "otherMuscles": ["Core", "Trapezius"],
+      "phases": ["TOP STAND", "HIP HINGE", "SHIN STRETCH", "HIP EXTENSION", "FINISH"],
+      "variations": [
+        "Romanian Deadlift (RDL)",
+        "Conventional Barbell Deadlift",
+        "Barbell Hip Thrust"
+      ]
+    },
+    "ex_standing_calf_raise": {
+      "name": "Standing Machine Calf Raise",
+      "animationPath": "assets/animations/calf_raise.glb",
+      "primaryMuscles": ["Gastrocnemius"],
+      "secondaryMuscles": ["Soleus", "Tibialis Posterior"],
+      "otherMuscles": ["Quadriceps (isometric)"],
+      "phases": ["HEEL STRETCH", "RISE UP", "PEAK TIPTOE", "LOWER HEEL", "FINISH"],
+      "variations": [
+        "Standing Machine Calf Raise",
+        "Barbell Tibialis Raise",
+        "Barbell Back Squat"
+      ]
+    },
+    "ex_tibialis_raise": {
+      "name": "Barbell Tibialis Raise",
+      "animationPath": "assets/animations/tibialis_raise.glb",
+      "primaryMuscles": ["Tibialis Anterior"],
+      "secondaryMuscles": ["Extensor Digitorum Longus", "Gastrocnemius & Soleus"],
+      "otherMuscles": ["Quadriceps (stabilizer)"],
+      "phases": ["START", "DORSIFLEX UP", "PEAK HOLD", "LOWER SLOW", "FINISH"],
+      "variations": [
+        "Barbell Tibialis Raise",
+        "Standing Machine Calf Raise",
+        "Barbell Back Squat"
+      ]
+    }
+  }
+}
+
