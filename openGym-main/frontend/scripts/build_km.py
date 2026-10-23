@@ -11,3 +11,4 @@ with open(KEYS_PATH, "r", encoding="utf-8") as f:
     keys = json.load(f)
 
 print(f"Loaded {len(keys)} keys.")
+

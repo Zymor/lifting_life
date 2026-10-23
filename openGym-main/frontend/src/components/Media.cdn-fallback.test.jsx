@@ -57,3 +57,4 @@ describe('Media and Thumb CDN fallback', () => {
     expect(cdnVideo.getAttribute('src')).toBe('https://opengym-bc111a.gitlab.io/exercise-media/clip/5984.mp4')
   })
 })
+

@@ -21,3 +21,4 @@ if (fs.existsSync(distSource)) {
   console.error('frontend/dist was not produced!')
   process.exit(1)
 }
+

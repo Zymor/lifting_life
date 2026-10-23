@@ -9,3 +9,4 @@ for k in keys:
     for w in k.split():
         words.add(re.sub(r'[^\w]', '', w.lower()))
 print(f"Distinct words: {len(words)}")
+
