@@ -1,4 +1,13 @@
 {
+  "name": "opengym",
+  "version": "1.4.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "dev": "cd frontend && npm run dev",
+    "preview": "cd frontend && npm run preview"
+  },
   "devDependencies": {
     "js-yaml": "^4.1.0"
   }
