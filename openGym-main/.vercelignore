@@ -1,15 +1,11 @@
-# Ignore non-frontend folders so Vercel does not treat api/ as serverless functions
-api/
-catalogue/
+# Ignore unnecessary non-app folders from Vercel build
 contrib/
 docs/
 helm/
 kubernetes/
 mcp/
-scripts/
 website/
 .gitea/
 .github/
 .gitlab/
 Lifting_Life/
-

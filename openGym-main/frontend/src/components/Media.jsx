@@ -14,6 +14,17 @@ export default function Media(p) {
   return isCustomEx(p.ex) ? <CustomMedia {...p} /> : <BuiltinMedia {...p} />
 }
 
+const CDN_MEDIA_BASE = 'https://opengym-bc111a.gitlab.io/exercise-media/'
+export function toCdnUrl(url) {
+  if (!url || typeof url !== 'string' || url.startsWith('http://') || url.startsWith('https://')) return url
+  const marker = 'exercise-media/'
+  const idx = url.indexOf(marker)
+  if (idx !== -1) {
+    return CDN_MEDIA_BASE + url.slice(idx + marker.length)
+  }
+  return url
+}
+
 // Big autoplaying animation; tap toggles to the still frame. `compact` shrinks it (superset cards).
 // `minimizable` (workout view) adds a persistent minimize/expand control so the animation stops
 // eating the screen; the chosen size is saved to settings and carries across exercises and
@@ -28,21 +39,34 @@ function BuiltinMedia({ ex, id, compact, minimizable }) {
   // on a white block. Now the still stands in for the animation, a neutral tile stands in for
   // both, and a tap tries again — no text, so nothing new to translate.
   const [failed, setFailed] = useState(null)
+  const [useCdn, setUseCdn] = useState(false)
   const gifSize = useStore(s => s.S.gifSize)
   const body = useStore(s => figureOf(s.S))
   const update = useStore(s => s.update)
-  const clip = ex.gif && isVideoSrc(gifSrc(ex, body)) ? gifSrc(ex, body) : null
+  const isCatalogue = /^\d{4,5}/.test(String(ex?.id || ''))
+  const rawClip = ex.gif && isVideoSrc(gifSrc(ex, body)) ? gifSrc(ex, body) : null
+  const clip = useCdn && rawClip ? toCdnUrl(rawClip) : rawClip
   const clipSrc = useClipInMemory(clip)
   if (!ex.gif) return null
   if (minimizable && gifSize === 'off') return null
   const mini = minimizable && gifSize === 'mini'
   const toggleSize = e => { e.stopPropagation(); update(s => { s.gifSize = mini ? 'full' : 'mini' }) }
   const showGif = playing && failed == null
-  const onError = () => setFailed(showGif ? 'gif' : 'all')
+  const onError = () => {
+    if (!useCdn && isCatalogue) {
+      setUseCdn(true)
+      return
+    }
+    setFailed(showGif ? 'gif' : 'all')
+  }
   const onTap = () => {
-    if (failed) { setFailed(null); setPlaying(true); return }
+    if (failed) { setFailed(null); setPlaying(true); setUseCdn(false); return }
     setPlaying(p => !p)
   }
+  const rawStill = imgSrc(ex, body)
+  const still = useCdn ? toCdnUrl(rawStill) : rawStill
+  const rawAnim = showGif ? gifSrc(ex, body) : rawStill
+  const anim = useCdn ? toCdnUrl(rawAnim) : rawAnim
   return (
     <div className={'exmedia' + (compact ? ' compact' : '') + (mini ? ' mini' : '') + (failed === 'all' ? ' broken' : '')} id={id} onClick={onTap}>
       {failed === 'all'
@@ -54,8 +78,8 @@ function BuiltinMedia({ ex, id, compact, minimizable }) {
               aria-label={exerciseNameFor(ex)} onError={onError} />
           : showGif && clip
             // the phone app is still reading the clip into memory: the still holds its place
-            ? <img decoding="async" draggable={false} src={imgSrc(ex, body)} alt={exerciseNameFor(ex)} />
-          : <img decoding="async" draggable={false} src={showGif ? gifSrc(ex, body) : imgSrc(ex, body)} alt={exerciseNameFor(ex)} onError={onError} />}
+            ? <img decoding="async" draggable={false} src={still} alt={exerciseNameFor(ex)} onError={onError} />
+          : <img decoding="async" draggable={false} src={anim} alt={exerciseNameFor(ex)} onError={onError} />}
       {minimizable && (
         <button className="giftoggle" onClick={toggleSize}>
           <Icon name={mini ? 'expand' : 'minimize'} />{mini ? t('Expand') : t('Minimize')}
@@ -87,6 +111,13 @@ function loadClip(src) {
   if (!clipLoads.has(src)) {
     clipLoads.set(src, fetch(src)
       .then(r => (r.ok ? r.blob() : Promise.reject(new Error('HTTP ' + r.status))))
+      .catch(err => {
+        const cdn = toCdnUrl(src)
+        if (cdn && cdn !== src) {
+          return fetch(cdn).then(r => (r.ok ? r.blob() : Promise.reject(err)))
+        }
+        throw err
+      })
       .then(blob => {
         const url = URL.createObjectURL(blob)
         clipCache.set(src, url)
@@ -136,8 +167,18 @@ export function Thumb(p) {
 }
 function BuiltinThumb({ ex }) {
   const body = useStore(s => figureOf(s.S))
-  const src = ex.img ? imgSrc(ex, body) : null
+  const [useCdn, setUseCdn] = useState(false)
+  const rawSrc = ex.img ? imgSrc(ex, body) : null
+  const isCatalogue = /^\d{4,5}/.test(String(ex?.id || ''))
+  const src = useCdn && isCatalogue && rawSrc ? toCdnUrl(rawSrc) : rawSrc
   const [broken, setBroken] = useState(null)
-  if (!src || broken === src) return <div className="thumb thumb-x"><Icon name="dumbbell" /></div>
-  return <img className="thumb" loading="lazy" decoding="async" draggable={false} src={src} alt="" onError={() => setBroken(src)} />
+  if (!src || broken === rawSrc) return <div className="thumb thumb-x"><Icon name="dumbbell" /></div>
+  const onError = () => {
+    if (!useCdn && isCatalogue && toCdnUrl(rawSrc) !== rawSrc) {
+      setUseCdn(true)
+    } else {
+      setBroken(rawSrc)
+    }
+  }
+  return <img className="thumb" loading="lazy" decoding="async" draggable={false} src={src} alt="" onError={onError} />
 }
