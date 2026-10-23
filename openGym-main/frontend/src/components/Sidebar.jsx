@@ -57,7 +57,7 @@ export default function Sidebar({ onStart, onOpenSearch }) {
       {/* Brand Header */}
       <div className="sidebar-brand" onClick={() => nav('/home')}>
         <div className="brand-logo">
-          <img src="lifting-life-180.png" alt="" width="38" height="38" style={{ display: 'block', borderRadius: 'inherit' }} />
+          <img src="lifting-life-mark-v2-180.png" alt="" width="48" height="48" style={{ display: 'block', borderRadius: 'inherit' }} />
         </div>
         <div className="brand-info">
           <span className="brand-title">Lifting Life</span>

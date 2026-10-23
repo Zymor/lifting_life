@@ -9,7 +9,7 @@
   "background_color": "#0c0e12",
   "theme_color": "#0c0e12",
   "icons": [
-    { "src": "lifting-life-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
-    { "src": "lifting-life-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "lifting-life-mark-v2-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "lifting-life-mark-v2-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

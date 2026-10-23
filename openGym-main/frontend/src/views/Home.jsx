@@ -84,7 +84,7 @@ export default function Home() {
   return (
     <div className="dashboard-content narrow">
       {/* Dashboard Top Header */}
-      <div className="hdr"><img src="lifting-life-180.png" alt="Lifting Life" width="44" height="44" style={{ borderRadius: 12, flexShrink: 0 }} />
+      <div className="hdr"><img src="lifting-life-mark-v2-180.png" alt="Lifting Life" width="56" height="56" style={{ borderRadius: 12, flexShrink: 0 }} />
         <div>
           <h1>{user?.name ? t('Hi {0}', user.name) : 'Lifting Life'}</h1>
           <div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div>

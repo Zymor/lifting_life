@@ -2185,11 +2185,11 @@ button.wl-summary{width:100%;padding:0 0 10px;text-align:start;border-radius:var
 }
 
 .brand-logo {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--r-sm);
-  background: var(--acc);
-  color: var(--on-acc);
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #111111;
+  color: var(--acc);
   display: flex;
   align-items: center;
   justify-content: center;
