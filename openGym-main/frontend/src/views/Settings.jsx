@@ -22,6 +22,7 @@ import { wakeLockSupported } from '../lib/wakelock.js'
 import { t, tn, LANGS, INSTR_LANGS, EXERCISE_NAME_LANGS, baseLang, dateLocale } from '../lib/i18n.js'
 import { effectiveLang } from '../lib/default-lang.js'
 import { DEMO, REPO } from '../lib/demo.js'
+import { finishRegistration } from '../lib/account-registration.js'
 import { MOBILE, isAndroid, shareExport, shareExportBlob, syncReminder } from '../lib/mobile.js'
 import { NUDGE_COPY, NUDGE_TONES, toneOf } from '../lib/nudge.js'
 import { referencedFiles } from '../lib/media-refs.js'
@@ -1408,11 +1409,16 @@ function RegisterInline({ close, setUser, pushState, pullState, toast }) {
     const n = (nameRef.current.value || '').trim()
     if (!n) { toast(t('Enter a name')); return }
     if (inviteOnly && !code.trim()) { toast(t('An invite code is required')); return }
-    try {
-      const u = await passkeyRegister(n, code.trim()); setUser(u); close()
-      if (hasData(useStore.getState().S)) { await pushState(); toast(t('Profile created, and your data moved into it')) }
-      else { await pullState(); toast(t('Welcome, {0}', u.name)) }
-    } catch (e) { if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast(passkeyError(e, t('Registration failed'))) }
+    let u
+    try { u = await passkeyRegister(n, code.trim()) }
+    catch (e) {
+      if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast(passkeyError(e, t('Registration failed')))
+      return
+    }
+    await finishRegistration({
+      user: u, setUser, close, hasLocalData: hasData(useStore.getState().S),
+      pushState, pullState, getSync: () => useStore.getState().sync, notify: toast
+    })
   }
   return <>
     <h3>{t('Create your profile')}</h3>

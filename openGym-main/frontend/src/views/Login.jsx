@@ -5,6 +5,7 @@ import { hasData } from '../store/useStore.js'
 import { t } from '../lib/i18n.js'
 import { DEMO, REPO } from '../lib/demo.js'
 import { guestAllowed } from '../lib/guest.js'
+import { finishRegistration } from '../lib/account-registration.js'
 import { useState, useRef, useEffect } from 'react'
 import Icon from '../components/Icon.jsx'
 import { Button, Segmented } from '../components/ui.jsx'
@@ -31,12 +32,17 @@ function RegisterSheet({ close }) {
     const n = name.trim()
     if (!n) { useUI.getState().toast(t('Enter a name')); return }
     if (inviteOnly && !code.trim()) { useUI.getState().toast(t('An invite code is required')); return }
-    try {
-      const u = await passkeyRegister(n, code.trim())
-      setUser(u); close()
-      if (hasData(useStore.getState().S)) { await pushState(); useUI.getState().toast(t('Profile created, and this device’s data moved into it')) }
-      else { await pullState(); useUI.getState().toast(t('Welcome, {0}', u.name)) }
-    } catch (e) { if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') useUI.getState().toast(passkeyError(e, t('Registration failed'))) }
+    let u
+    try { u = await passkeyRegister(n, code.trim()) }
+    catch (e) {
+      if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') useUI.getState().toast(passkeyError(e, t('Registration failed')))
+      return
+    }
+    await finishRegistration({
+      user: u, setUser, close, hasLocalData: hasData(useStore.getState().S),
+      pushState, pullState, getSync: () => useStore.getState().sync,
+      notify: message => useUI.getState().toast(message)
+    })
   }
   const choose = pwOn && webauthnOK() && <>
     <Segmented options={[{ value: 'passkey', label: t('Passkey'), icon: 'fingerprint' }, { value: 'password', label: t('Password'), icon: 'key' }]}
@@ -47,12 +53,14 @@ function RegisterSheet({ close }) {
     <h3>{t('Create your profile')}</h3>
     {choose}
     <div className="muted small" style={{ marginBottom: 14 }}>{t('Pick a name and a password. You sign in with both.')}</div>
+    <div className="dim small" style={{ marginBottom: 14 }}>{t('Guest workouts stay on this device. Creating a profile will try to upload them; check sync status before relying on another device.')}</div>
     <PasswordRegisterForm close={close} inviteOnly={inviteOnly} name={name} setName={setName} code={code} setCode={setCode} />
   </>
   return <>
     <h3>{t('Create your profile')}</h3>
     {choose}
     <div className="muted small" style={{ marginBottom: 14 }}>{t('Pick a name, then confirm with {0}. The passkey lives on your device, so no password needed.', bio())}</div>
+    <div className="dim small" style={{ marginBottom: 14 }}>{t('Guest workouts stay on this device. Creating a profile will try to upload them; check sync status before relying on another device.')}</div>
     <input ref={ref} className="input" placeholder={t('Your name')} maxLength={40} value={name} onChange={e => setName(e.target.value)} />
     {inviteOnly && <>
       <div style={{ height: 10 }} />
@@ -72,8 +80,15 @@ export default function Login() {
   const pwOn = passwordOn(config)
   const register = () => useUI.getState().openSheet(close => <RegisterSheet close={close} />)
   const signIn = async () => {
-    try { const u = await passkeyLogin(); setUser(u, { adopt: true }); await adoptProfile(askAddDeviceData); useUI.getState().toast(t('Welcome back, {0}', u.name)) }
-    catch (e) { if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') useUI.getState().toast(passkeyError(e, t('Sign-in failed'))) }
+    let u
+    try { u = await passkeyLogin() }
+    catch (e) {
+      if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') useUI.getState().toast(passkeyError(e, t('Sign-in failed')))
+      return
+    }
+    setUser(u, { adopt: true })
+    try { await adoptProfile(askAddDeviceData); useUI.getState().toast(t('Welcome back, {0}', u.name)) }
+    catch { useUI.getState().toast(t('Signed in. Your device data has not synced yet; check the connection status.')) }
   }
   const head = <>
     <div style={{ display: 'flex', justifyContent: 'center' }}><img src="lifting-life-mark-v2-180.png" alt="" width="112" height="112" style={{ borderRadius: 24 }} /></div>
@@ -124,7 +139,10 @@ export default function Login() {
         // so say that plainly instead of offering a local profile that cannot be created.
         : t("This browser doesn't support passkeys, and this instance requires an account. Try a browser or device with passkey support.")}</div>}
       {canGuest && <Button variant="ghost" className="dim" onClick={() => setGuest(true)}>{t('Continue without account')}</Button>}
-      <div className="dim small" style={{ marginTop: 26, lineHeight: 1.5 }}>{pwOn ? t('Passkeys use {0}. A password works too, where passkeys do not.', bio()) : t('Passkeys use {0}. No passwords to remember.', bio())}<br />{t('Each profile keeps its own plan, workouts & body weight.')}</div>
+      <div className="dim small" style={{ marginTop: 26, lineHeight: 1.5 }}>{pwOn ? t('Passkeys use {0}. A password works too, where passkeys do not.', bio()) : t('Passkeys use {0}. No passwords to remember.', bio())}<br />{t('Guest data stays in this browser; signed-in data syncs to your account only after a successful upload.')}</div>
+      <div className="dim small" style={{ marginTop: 10, lineHeight: 1.5 }}>{pwOn
+        ? t('Lost a passkey? Use another passkey or your password. Password reset needs a code from your app admin; e-mail is not used for recovery.')
+        : t('Keep a second passkey or a signed-in device. If you lose every passkey, this app cannot recover the account automatically.')}</div>
     </div>
   )
 }

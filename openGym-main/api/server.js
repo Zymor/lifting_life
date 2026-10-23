@@ -37,7 +37,12 @@ import { atomicWrite as durableWrite } from './durable.js';
 import { excusedOn, nudgeFor, nudgeWindowOpen, toneOf } from './nudge.js';
 
 const PORT = +(process.env.PORT || 3000);
-const DATA = process.env.DATA_DIR || (process.env.VERCEL ? '/tmp/data' : '/data');
+// Accounts, passkeys, session signing keys, workouts and uploads all use local files.
+// Vercel services do not provide this API with a durable shared filesystem.
+if (process.env.VERCEL || process.env.VERCEL_URL) {
+  throw new Error('openGym API requires durable shared storage; Vercel local files are temporary. Run the API on a host with a persistent DATA_DIR.');
+}
+const DATA = process.env.DATA_DIR || '/data';
 const RP_ID = process.env.RP_ID || (process.env.VERCEL_URL ? process.env.VERCEL_URL.split(':')[0] : 'localhost');
 const ORIGIN = process.env.ORIGIN || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:8080');
 const RP_NAME = process.env.RP_NAME || 'openGym';
@@ -146,6 +151,7 @@ db.creds = db.creds || [];
 db.subs = db.subs || [];
 db.invites = db.invites || [];
 db.deviceLinks = db.deviceLinks || [];   // unused one-time device links, hashed (device-link.js)
+db.revokedSessions = db.revokedSessions || []; // hashes only; expired entries are pruned on logout
 const isAdmin = user => !!user && (user.admin === true || ADMIN_UIDS.includes(user.id));
 // 0600: db.json holds passkey credential material. It used to be covered by a blanket 0700 on
 // the whole directory; now that the directory stays traversable, the file carries its own mode.
@@ -550,6 +556,7 @@ function verifySig(token) {
 // signing out the whole instance. Cookies minted before `sv` existed have no third field and are
 // read as version 0, matching a user who has never bumped — they stay valid until they expire.
 const sessionVersion = user => user.sv || 0;
+const sessionHash = token => crypto.createHash('sha256').update(token).digest('base64url');
 function makeSession(user) {
   const exp = Date.now() + SESSION_DAYS * 86400000;
   return sign(user.id + ':' + exp + ':' + sessionVersion(user));
@@ -603,11 +610,12 @@ function sessionOf(req) {
   const user = db.users.find(u => u.id === uid) || null;
   if (!user) return null;
   if (user.disabled) return null;           // disabled accounts are locked out everywhere
+  if (db.revokedSessions.some(row => row.h === sessionHash(tok) && row.exp > Date.now())) return null;
   // Missing third field = pre-versioning cookie = version 0. Anything non-numeric is a malformed
   // payload (it still had to pass the HMAC, so this is belt-and-braces) and is refused outright.
   const claimed = ver === undefined ? 0 : Number(ver);
   if (!Number.isInteger(claimed) || claimed !== sessionVersion(user)) return null;
-  return { user, exp: +exp, bearer: !cookie };
+  return { user, exp: +exp, bearer: !cookie, token: tok };
 }
 function readSession(req) {
   return sessionOf(req)?.user || null;
@@ -1327,7 +1335,7 @@ const passwordRoutes = {
     claimFirstAdmin(req, user);
     db.users.push(user);
     saveDb();
-    audit(req, 'auth.register.ok', { user, msg: inv ? inv.code + ' · password' : 'password' });
+    audit(req, 'auth.register.ok', { user, msg: inv ? 'invite · password' : 'password' });
     json(res, 200, { user: publicUser(user) }, { 'Set-Cookie': sessionCookie(user) });
   },
 
@@ -2034,7 +2042,7 @@ const routes = {
       created: user.created, lastUsed: user.created
     });
     saveDb();
-    audit(req, 'auth.register.ok', { user, msg: invite ? invite.code : null });
+    audit(req, 'auth.register.ok', { user, msg: invite ? 'invite' : null });
     json(res, 200, { user: { id: user.id, name: user.name, admin: isAdmin(user) } }, { 'Set-Cookie': sessionCookie(user) });
   },
 
@@ -2100,11 +2108,16 @@ const routes = {
     json(res, 200, { user: { id: user.id, name: user.name, admin: isAdmin(user) } }, { 'Set-Cookie': sessionCookie(user) });
   },
 
-  // Reads the session purely so the sign-out can be recorded; the cookie is cleared either way.
-  // A logout with no valid cookie is a no-op and isn't worth an entry.
+  // Revoke this token on the server too: clearing a browser cookie alone does not invalidate a
+  // copied token. Store only its hash and expiry, never the credential itself.
   'POST /api/logout': async (req, res) => {
-    const user = readSession(req);
-    if (user) audit(req, 'auth.logout', { user });
+    const session = sessionOf(req);
+    if (session) {
+      db.revokedSessions = db.revokedSessions.filter(row => row.exp > Date.now());
+      db.revokedSessions.push({ h: sessionHash(session.token), exp: session.exp });
+      saveDb();
+      audit(req, 'auth.logout', { user: session.user });
+    }
     json(res, 200, { ok: true }, { 'Set-Cookie': clearCookie });
   },
 
@@ -2517,7 +2530,7 @@ const routes = {
     const invite = { code, note: text(body.note).slice(0, 60), createdBy: admin.id, created: new Date().toISOString() };
     db.invites.push(invite);
     saveDb();
-    audit(req, 'admin.invite.create', { user: admin, msg: code });
+    audit(req, 'admin.invite.create', { user: admin });
     json(res, 200, { invite });
   },
 
@@ -2529,7 +2542,7 @@ const routes = {
     if (inv.usedBy) return json(res, 400, { error: 'already used, cannot revoke' });
     db.invites = db.invites.filter(i => i.code !== inv.code);
     saveDb();
-    audit(req, 'admin.invite.revoke', { user: admin, msg: inv.code });
+    audit(req, 'admin.invite.revoke', { user: admin });
     json(res, 200, { ok: true });
   },
 

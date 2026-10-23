@@ -9,6 +9,7 @@
 // only words them.
 import { useEffect, useRef, useState } from 'react'
 import { useStore, hasData } from '../store/useStore.js'
+import { finishRegistration } from '../lib/account-registration.js'
 import { useUI } from '../store/useUI.js'
 import { t } from '../lib/i18n.js'
 import { dateLocale } from '../lib/i18n-core.js'
@@ -75,8 +76,8 @@ async function signedIn(u, close) {
   const st = useStore.getState()
   st.setUser(u, { adopt: true })
   close()
-  await st.adoptProfile(askAddDeviceData)
-  toast(t('Welcome back, {0}', u.name))
+  try { await st.adoptProfile(askAddDeviceData); toast(t('Welcome back, {0}', u.name)) }
+  catch { toast(t('Signed in. Your device data has not synced yet; check the connection status.')) }
 }
 
 const field = { autoCapitalize: 'none', autoCorrect: 'off', spellCheck: false }
@@ -173,14 +174,17 @@ export function PasswordRegisterForm({ close, inviteOnly, name, setName, code, s
       : null
     if (bad) { setErr(bad); return }
     setBusy(true); setErr(null)
+    let u
+    try { u = await passwordRegister(n, pw, code.trim(), mail) }
+    catch (e) { setErr(passwordError(e)); setBusy(false); return }
+    const st = useStore.getState()
     try {
-      const u = await passwordRegister(n, pw, code.trim(), mail)
-      const st = useStore.getState()
-      st.setUser(u); close()
-      if (hasData(useStore.getState().S)) { await st.pushState(); toast(t('Profile created, and this device’s data moved into it')) }
-      else { await st.pullState(); toast(t('Welcome, {0}', u.name)) }
-    } catch (e) { setErr(passwordError(e)) }
-    finally { setBusy(false) }
+      await finishRegistration({
+        user: u, setUser: st.setUser, close, hasLocalData: hasData(st.S),
+        pushState: st.pushState, pullState: st.pullState,
+        getSync: () => useStore.getState().sync, notify: toast
+      })
+    } finally { setBusy(false) }
   }
   return <form onSubmit={submit} noValidate>
     <input className="input" name="username" autoComplete="username" placeholder={t('Your name')} maxLength={40}

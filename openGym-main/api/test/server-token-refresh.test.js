@@ -51,8 +51,25 @@ async function startServer(t) {
   // readiness signal — see boundPort in helpers.mjs for why the test does not pick one.
   h.port = await boundPort(child, () => h.log);
   h.api = `http://127.0.0.1:${h.port}`;
-  return h;
+  return { ...h, dataDir };
 }
+
+test('ordinary logout revokes only its token and stores only a hash', async t => {
+  const h = await startServer(t);
+  const first = mint('u_phone', { daysLeft: 5 });
+  const second = mint('u_phone', { daysLeft: 6 });
+  const me = token => fetch(`${h.api}/api/me`, { headers: bearer(token) });
+  assert.equal((await me(first)).status, 200);
+  assert.equal((await me(second)).status, 200);
+  const out = await fetch(`${h.api}/api/logout`, { method: 'POST', headers: { Cookie: `gymsid=${first}`, Origin: 'http://localhost:8080' } });
+  assert.equal(out.status, 200);
+  assert.equal((await me(first)).status, 401);
+  assert.equal((await me(second)).status, 200);
+  const saved = JSON.parse(fs.readFileSync(path.join(h.dataDir, 'db.json'), 'utf8'));
+  assert.equal(saved.revokedSessions.length, 1);
+  assert.equal(saved.revokedSessions[0].h, crypto.createHash('sha256').update(first).digest('base64url'));
+  assert.equal(JSON.stringify(saved).includes(first), false);
+});
 
 test('a bearer token past half its lifetime gets a fresh one from /api/me; a younger one and a cookie do not', async t => {
   const h = await startServer(t);
