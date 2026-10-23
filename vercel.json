@@ -1,0 +1,45 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "api": {
+      "root": "openGym-main/api",
+      "runtime": "node",
+      "entrypoint": "server.js",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "frontend",
+          "format": "url",
+          "env": "FRONTEND_URL"
+        }
+      ]
+    },
+    "frontend": {
+      "root": "openGym-main/frontend",
+      "framework": "vite",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "api",
+          "format": "url",
+          "env": "API_URL"
+        }
+      ]
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
+    }
+  ]
+}
+

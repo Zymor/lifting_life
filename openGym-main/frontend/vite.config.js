@@ -6,7 +6,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { lazyAssets, stampSw } from './scripts/sw-stamp.mjs'
 
-const backend = process.env.API_TARGET || 'http://127.0.0.1:3000'
+const backend = process.env.API_URL || process.env.API_TARGET || 'http://127.0.0.1:3000'
 // The API refuses a state-changing request that a browser sent from anywhere other than its own
 // ORIGIN (the CSRF guard in api/server.js). The dev server is on a different port, so the page's
 // real Origin is not ORIGIN — modern browsers get through on Sec-Fetch-Site: same-origin, and
