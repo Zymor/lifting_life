@@ -152,6 +152,9 @@ db.subs = db.subs || [];
 db.invites = db.invites || [];
 db.deviceLinks = db.deviceLinks || [];   // unused one-time device links, hashed (device-link.js)
 db.revokedSessions = db.revokedSessions || []; // hashes only; expired entries are pruned on logout
+db.friendInvites = db.friendInvites || []; // one-use, 24-hour invite codes; never part of workout state
+db.friendRequests = db.friendRequests || [];
+db.friendships = db.friendships || [];
 const isAdmin = user => !!user && (user.admin === true || ADMIN_UIDS.includes(user.id));
 // 0600: db.json holds passkey credential material. It used to be covered by a blanket 0700 on
 // the whole directory; now that the directory stays traversable, the file carries its own mode.
@@ -1912,6 +1915,31 @@ function dataWritable() {
   return ok;
 }
 
+// Friend invitations are deliberately exact-match, one-use capabilities. There is no public
+// profile search: names and e-mail addresses must not become a directory of account holders.
+const FRIEND_INVITE_MS = 24 * 60 * 60 * 1000;
+const FRIEND_REQUESTS_PER_HOUR = createWindow({ max: 20, windowMs: 60 * 60 * 1000 });
+const FRIEND_INVITES_PER_HOUR = createWindow({ max: 20, windowMs: 60 * 60 * 1000 });
+setInterval(() => { FRIEND_REQUESTS_PER_HOUR.sweep(); FRIEND_INVITES_PER_HOUR.sweep(); }, 60000).unref();
+const friendPair = (a, b) => [a, b].sort().join(':');
+const friendName = id => {
+  const u = db.users.find(x => x.id === id && !x.disabled);
+  return u ? { id: u.id, name: u.name } : null;
+};
+function friendRoster(user) {
+  const now = Date.now();
+  const invite = db.friendInvites.find(x => x.userId === user.id && x.expires > now);
+  return {
+    invite: invite ? { code: invite.code, expires: invite.expires } : null,
+    friends: db.friendships.filter(x => x.a === user.id || x.b === user.id)
+      .map(x => friendName(x.a === user.id ? x.b : x.a)).filter(Boolean),
+    incoming: db.friendRequests.filter(x => x.to === user.id)
+      .map(x => ({ ...friendName(x.from), requestId: x.id, created: x.created })).filter(x => x.id),
+    outgoing: db.friendRequests.filter(x => x.from === user.id)
+      .map(x => ({ ...friendName(x.to), requestId: x.id, created: x.created })).filter(x => x.id)
+  };
+}
+
 const routes = {
   // 503 rather than a flag in a 200: the container healthcheck is `wget --spider`, which reads
   // the status and nothing else, and an instance that cannot write its data directory is exactly
@@ -1966,6 +1994,105 @@ const routes = {
     const { user } = s;
     const renew = s.bearer && s.exp - Date.now() < SESSION_DAYS * 86400000 / 2;
     json(res, 200, { user: { id: user.id, name: user.name, admin: isAdmin(user) }, ...(renew ? { token: makeSession(user) } : {}) });
+  },
+
+  'GET /api/friends': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    json(res, 200, friendRoster(user));
+  },
+
+  'POST /api/friends/invite': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const wait = FRIEND_INVITES_PER_HOUR.take(user.id);
+    if (wait) return tooMany(res, wait);
+    // Replacing the code revokes any copy shared earlier. It is not an account credential;
+    // it only lets someone ask this user to connect, and expires after one day or one use.
+    const now = Date.now();
+    db.friendInvites = db.friendInvites.filter(x => x.userId !== user.id && x.expires > now);
+    db.friendInvites.push({ userId: user.id, code: crypto.randomBytes(18).toString('base64url'), expires: now + FRIEND_INVITE_MS });
+    saveDb();
+    json(res, 201, friendRoster(user));
+  },
+
+  'DELETE /api/friends/invite': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    db.friendInvites = db.friendInvites.filter(x => x.userId !== user.id);
+    saveDb();
+    json(res, 200, friendRoster(user));
+  },
+
+  'POST /api/friends/request': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const body = await readBody(req);
+    const code = text(body.code).trim();
+    if (!/^[A-Za-z0-9_-]{24}$/.test(code)) return json(res, 400, { error: 'enter a valid friend code' });
+    const wait = FRIEND_REQUESTS_PER_HOUR.take(user.id);
+    if (wait) return tooMany(res, wait);
+    const invite = db.friendInvites.find(x => x.code === code && x.expires > Date.now());
+    const recipient = invite && friendName(invite.userId);
+    if (!recipient) return json(res, 404, { error: 'friend code expired or unavailable' });
+    if (recipient.id === user.id) return json(res, 400, { error: 'you cannot add yourself' });
+    const pair = friendPair(user.id, recipient.id);
+    if (db.friendships.some(x => friendPair(x.a, x.b) === pair)) return json(res, 409, { error: 'you are already friends' });
+    if (db.friendRequests.some(x => friendPair(x.from, x.to) === pair)) return json(res, 409, { error: 'a friend request already exists' });
+    if (db.friendRequests.filter(x => x.from === user.id).length >= 20 ||
+        db.friendRequests.filter(x => x.to === recipient.id).length >= 50) return json(res, 429, { error: 'too many pending friend requests' });
+    db.friendRequests.push({ id: crypto.randomUUID(), from: user.id, to: recipient.id, created: new Date().toISOString() });
+    db.friendInvites = db.friendInvites.filter(x => x !== invite); // one use, even before acceptance
+    saveDb();
+    json(res, 201, friendRoster(user));
+  },
+
+  'POST /api/friends/accept': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const body = await readBody(req);
+    const request = db.friendRequests.find(x => x.id === body.requestId && x.to === user.id);
+    if (!request || !friendName(request.from)) return json(res, 404, { error: 'friend request unavailable' });
+    db.friendRequests = db.friendRequests.filter(x => friendPair(x.from, x.to) !== friendPair(request.from, request.to));
+    if (!db.friendships.some(x => friendPair(x.a, x.b) === friendPair(request.from, request.to))) {
+      db.friendships.push({ a: request.from, b: request.to, created: new Date().toISOString() });
+    }
+    saveDb();
+    json(res, 200, friendRoster(user));
+  },
+
+  'POST /api/friends/decline': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const body = await readBody(req);
+    const request = db.friendRequests.find(x => x.id === body.requestId && x.to === user.id);
+    if (!request) return json(res, 404, { error: 'friend request unavailable' });
+    db.friendRequests = db.friendRequests.filter(x => x !== request);
+    saveDb();
+    json(res, 200, friendRoster(user));
+  },
+
+  'POST /api/friends/cancel': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const body = await readBody(req);
+    const request = db.friendRequests.find(x => x.id === body.requestId && x.from === user.id);
+    if (!request) return json(res, 404, { error: 'friend request unavailable' });
+    db.friendRequests = db.friendRequests.filter(x => x !== request);
+    saveDb();
+    json(res, 200, friendRoster(user));
+  },
+
+  'POST /api/friends/remove': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const body = await readBody(req);
+    const other = text(body.userId);
+    const connection = db.friendships.find(x => (x.a === user.id && x.b === other) || (x.b === user.id && x.a === other));
+    if (!connection) return json(res, 404, { error: 'friend unavailable' });
+    db.friendships = db.friendships.filter(x => x !== connection);
+    saveDb();
+    json(res, 200, friendRoster(user));
   },
 
   'POST /api/register/options': async (req, res) => {
@@ -2474,6 +2601,10 @@ const routes = {
     if (u.disabled) presence.delete(u.id);   // drop them off "training now" at once
     // A device link made before the lock would otherwise still be waiting when it is lifted.
     if (u.disabled) dropDeviceLinks(db, u.id);
+    if (u.disabled) {
+      db.friendInvites = db.friendInvites.filter(x => x.userId !== u.id);
+      db.friendRequests = db.friendRequests.filter(x => x.from !== u.id && x.to !== u.id);
+    }
     saveDb();
     audit(req, u.disabled ? 'admin.user.disable' : 'admin.user.enable', { user: admin, target: u });
     json(res, 200, { ok: true, id: u.id, disabled: u.disabled });
@@ -2496,6 +2627,9 @@ const routes = {
     db.users = db.users.filter(x => x.id !== u.id);
     db.creds = (db.creds || []).filter(c => c.userId !== u.id);
     db.subs = (db.subs || []).filter(x => x.userId !== u.id);
+    db.friendInvites = db.friendInvites.filter(x => x.userId !== u.id);
+    db.friendRequests = db.friendRequests.filter(x => x.from !== u.id && x.to !== u.id);
+    db.friendships = db.friendships.filter(x => x.a !== u.id && x.b !== u.id);
     dropDeviceLinks(db, u.id);
     presence.delete(u.id);
     // The training history and any Coach credential of theirs, both outside db.json.

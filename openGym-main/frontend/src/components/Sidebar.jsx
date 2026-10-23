@@ -25,7 +25,7 @@ export default function Sidebar({ onStart, onOpenSearch }) {
     { key: 'schedule', label: t('Workout Schedule'), path: '/schedule', icon: 'calendar' },
     { key: 'powerlifting', label: t('Powerlifting'), path: '/powerlifting', icon: 'barbell', badge: 'Big 3' },
     { key: 'programs', label: t('Training Programs'), path: '/programs', icon: 'clipboard' },
-    { key: 'community', label: t('Community & Friends'), path: '/community', icon: 'personCircle' },
+    { key: 'community', label: t('Friends'), path: '/community', icon: 'personCircle' },
     { key: 'analytics', label: t('Progress Analytics'), path: '/analytics', icon: 'chart' },
     { key: 'profile', label: t('My Profile'), path: '/profile', icon: 'person' },
     { key: 'settings', label: t('Settings'), path: '/settings', icon: 'gear' },

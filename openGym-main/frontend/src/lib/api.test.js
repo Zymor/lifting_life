@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { webauthnOK, bio, vault, BIO, VAULT, passkeyError } from './api.js'
+import { webauthnOK, bio, vault, BIO, VAULT, passkeyError, passkeyLogin, passkeyRegister, passwordLogin, passwordRegister, passwordResetRedeem } from './api.js'
 import de from '../locales/de.js'
 import { _setLangState } from './i18n-core.js'
 
@@ -46,6 +46,53 @@ describe('api()', () => {
         message: 'conflict', status: 409, data: { error: 'conflict', rev: 3, state: { _rev: 3 } }
       })
     } finally { globalThis.fetch = original }
+  })
+})
+
+describe('account response validation', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('does not sign in, register, or redeem a reset from an empty 200 response', async () => {
+    vi.stubGlobal('fetch', async () => new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }))
+    for (const action of [
+      () => passwordLogin('Ana', 'secret phrase'),
+      () => passwordRegister('Ana', 'secret phrase', ''),
+      () => passwordResetRedeem('Ana', 'RESETCODE', 'new secret phrase')
+    ]) await expect(action()).rejects.toMatchObject({ code: 'bad-response', status: 200 })
+  })
+
+  it('returns only a confirmed user, and preserves a duplicate registration refusal', async () => {
+    const calls = []
+    vi.stubGlobal('fetch', async (url, opts) => {
+      calls.push({ url, opts })
+      return new Response(JSON.stringify({ user: { id: 'u1', name: 'Ana' } }), { status: 200, headers: { 'content-type': 'application/json' } })
+    })
+    await expect(passwordLogin('Ana', 'secret phrase')).resolves.toMatchObject({ id: 'u1', name: 'Ana' })
+    expect(calls.at(-1)).toMatchObject({ url: '/api/me', opts: { cache: 'no-store' } })
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ error: 'name taken', code: 'name-taken' }), { status: 409, headers: { 'content-type': 'application/json' } }))
+    await expect(passwordRegister('Ana', 'secret phrase', '')).rejects.toMatchObject({ status: 409, data: { code: 'name-taken' } })
+  })
+
+  it('does not switch accounts if the server accepted credentials but the session cookie did not work', async () => {
+    vi.stubGlobal('fetch', async url => url.endsWith('/me')
+      ? new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'content-type': 'application/json' } })
+      : new Response(JSON.stringify({ user: { id: 'u1', name: 'Ana' } }), { status: 200, headers: { 'content-type': 'application/json' } }))
+    await expect(passwordRegister('Ana', 'secret phrase', '')).rejects.toMatchObject({ code: 'session-unconfirmed' })
+    await expect(passwordLogin('Ana', 'secret phrase')).rejects.toMatchObject({ code: 'session-unconfirmed' })
+  })
+
+  it('also rejects passkey ceremonies whose verify response has no user', async () => {
+    const credential = {
+      id: 'key1', rawId: new Uint8Array([1]).buffer, type: 'public-key',
+      response: { clientDataJSON: new Uint8Array([1]).buffer, attestationObject: new Uint8Array([2]).buffer,
+        authenticatorData: new Uint8Array([3]).buffer, signature: new Uint8Array([4]).buffer }
+    }
+    setCapability(navigator, 'credentials', { create: async () => credential, get: async () => credential })
+    vi.stubGlobal('fetch', async url => new Response(JSON.stringify(url.endsWith('/options')
+      ? { cid: 'c1', options: { challenge: 'AQ', user: { id: 'AQ' } } }
+      : {}), { status: 200, headers: { 'content-type': 'application/json' } }))
+    await expect(passkeyRegister('Ana', '')).rejects.toMatchObject({ code: 'bad-response' })
+    await expect(passkeyLogin()).rejects.toMatchObject({ code: 'bad-response' })
   })
 })
 

@@ -10,7 +10,7 @@ export async function finishRegistration({ user, setUser, close, hasLocalData, p
     if (hasLocalData) await pushState()
     else await pullState()
     const sync = getSync()
-    synced = !sync?.pending && !sync?.lastError
+    synced = !!sync && sync.status === 'ok' && !sync.pending && !sync.lastError && sync.lastSynced > 0
   } catch { /* the local copy remains available for a later sync */ }
   if (synced) {
     notify(hasLocalData

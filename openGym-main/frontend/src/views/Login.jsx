@@ -18,6 +18,7 @@ function RegisterSheet({ close }) {
   const config = useStore(s => s.config)
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
+  const [busy, setBusy] = useState(false)
   const inviteOnly = !!config?.invite_only
   // A password is offered only where the instance allows it (#118), and is the only choice in a
   // browser that cannot make a passkey. Where both work, the passkey stays the first one.
@@ -29,20 +30,25 @@ function RegisterSheet({ close }) {
   // appears on an instance whose config arrived late rather than never.
   useEffect(() => { loadConfig() }, [loadConfig])
   const go = async () => {
+    if (busy) return
     const n = name.trim()
     if (!n) { useUI.getState().toast(t('Enter a name')); return }
     if (inviteOnly && !code.trim()) { useUI.getState().toast(t('An invite code is required')); return }
+    setBusy(true)
     let u
     try { u = await passkeyRegister(n, code.trim()) }
     catch (e) {
       if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') useUI.getState().toast(passkeyError(e, t('Registration failed')))
+      setBusy(false)
       return
     }
-    await finishRegistration({
-      user: u, setUser, close, hasLocalData: hasData(useStore.getState().S),
-      pushState, pullState, getSync: () => useStore.getState().sync,
-      notify: message => useUI.getState().toast(message)
-    })
+    try {
+      await finishRegistration({
+        user: u, setUser, close, hasLocalData: hasData(useStore.getState().S),
+        pushState, pullState, getSync: () => useStore.getState().sync,
+        notify: message => useUI.getState().toast(message)
+      })
+    } finally { setBusy(false) }
   }
   const choose = pwOn && webauthnOK() && <>
     <Segmented options={[{ value: 'passkey', label: t('Passkey'), icon: 'fingerprint' }, { value: 'password', label: t('Password'), icon: 'key' }]}
@@ -69,7 +75,30 @@ function RegisterSheet({ close }) {
       <div className="dim small" style={{ marginTop: 6 }}>{t('This app is invite-only. Enter the code you were given.')}</div>
     </>}
     <div style={{ height: 12 }} />
-    <Button variant="primary" onClick={go}>{t('Create passkey')}</Button>
+    <Button variant="primary" onClick={go} disabled={busy} aria-busy={busy}>{busy ? t('Creating passkey…') : t('Create passkey')}</Button>
+  </>
+}
+
+function RecoverySheet({ close, passwordEnabled }) {
+  return <>
+    <h3>{t('Get back into your profile')}</h3>
+    <div className="muted small" style={{ marginBottom: 14, lineHeight: 1.5 }}>
+      {t('Use a sign-in method you already set up. Creating a new profile will not bring back the workouts in your old account.')}
+    </div>
+    <div className="card small" style={{ textAlign: 'left', lineHeight: 1.55, marginBottom: 12 }}>
+      <strong>{t('Another signed-in device')}</strong><br />
+      {t('On that device, open Settings → Account → Add another device to make a one-time code for a new passkey.')}
+    </div>
+    {passwordEnabled && <div className="card small" style={{ textAlign: 'left', lineHeight: 1.55, marginBottom: 12 }}>
+      <strong>{t('Password or admin reset code')}</strong><br />
+      {t('Sign in with your password. If you forgot it, ask your app admin for a one-time reset code, then choose “Have a reset code” on the password sign-in screen. Reset codes are not sent by e-mail.')}
+    </div>}
+    <div className="dim small" style={{ textAlign: 'left', lineHeight: 1.5, marginBottom: 14 }}>
+      {t('If you lost every passkey and have no password or signed-in device, this app cannot automatically recover the account.')}
+    </div>
+    {passwordEnabled && <Button variant="primary" onClick={() => { close(); openPasswordSignIn() }}>{t('Sign in with password')}</Button>}
+    <div style={{ height: 8 }} />
+    <Button variant="ghost" onClick={close}>{t('Close')}</Button>
   </>
 }
 
@@ -78,17 +107,23 @@ export default function Login() {
   const config = useStore(s => s.config)
   const canGuest = guestAllowed(config)
   const pwOn = passwordOn(config)
+  const [signingIn, setSigningIn] = useState(false)
   const register = () => useUI.getState().openSheet(close => <RegisterSheet close={close} />)
+  const recovery = () => useUI.getState().openSheet(close => <RecoverySheet close={close} passwordEnabled={pwOn} />)
   const signIn = async () => {
+    if (signingIn) return
+    setSigningIn(true)
     let u
     try { u = await passkeyLogin() }
     catch (e) {
       if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') useUI.getState().toast(passkeyError(e, t('Sign-in failed')))
+      setSigningIn(false)
       return
     }
     setUser(u, { adopt: true })
     try { await adoptProfile(askAddDeviceData); useUI.getState().toast(t('Welcome back, {0}', u.name)) }
     catch { useUI.getState().toast(t('Signed in. Your device data has not synced yet; check the connection status.')) }
+    finally { setSigningIn(false) }
   }
   const head = <>
     <div style={{ display: 'flex', justifyContent: 'center' }}><img src="lifting-life-mark-v2-180.png" alt="" width="112" height="112" style={{ borderRadius: 24 }} /></div>
@@ -116,7 +151,7 @@ export default function Login() {
       {head}
       <div className="muted" style={{ marginBottom: 34 }}>{t('Your workouts. Your weights. Your profile.')}</div>
       {webauthnOK() ? <>
-        <Button variant="primary" icon="fingerprint" onClick={signIn}>{t('Sign in with passkey')}</Button>
+        <Button variant="primary" icon="fingerprint" onClick={signIn} disabled={signingIn} aria-busy={signingIn}>{signingIn ? t('Signing in…') : t('Sign in with passkey')}</Button>
         <div style={{ height: 10 }} />
         {pwOn && <><Button icon="key" onClick={() => openPasswordSignIn()}>{t('Sign in with password')}</Button><div style={{ height: 10 }} /></>}
         <Button icon="plusCircle" onClick={register}>{t('Create new profile')}</Button>
@@ -139,7 +174,13 @@ export default function Login() {
         // so say that plainly instead of offering a local profile that cannot be created.
         : t("This browser doesn't support passkeys, and this instance requires an account. Try a browser or device with passkey support.")}</div>}
       {canGuest && <Button variant="ghost" className="dim" onClick={() => setGuest(true)}>{t('Continue without account')}</Button>}
-      <div className="dim small" style={{ marginTop: 26, lineHeight: 1.5 }}>{pwOn ? t('Passkeys use {0}. A password works too, where passkeys do not.', bio()) : t('Passkeys use {0}. No passwords to remember.', bio())}<br />{t('Guest data stays in this browser; signed-in data syncs to your account only after a successful upload.')}</div>
+      <Button variant="ghost" className="dim" onClick={recovery}>{t('Need help signing in?')}</Button>
+      <div className="card small" style={{ textAlign: 'left', marginTop: 20, lineHeight: 1.55 }}>
+        <strong>{t('Where your workouts live')}</strong>
+        <div style={{ marginTop: 8 }}>{t('Guest workouts stay in this browser. After creating an account, check sync status before relying on another device.')}</div>
+        <div style={{ marginTop: 6 }}>{t('Signed-in workouts reach your account only after the server confirms an upload.')}</div>
+      </div>
+      <div className="dim small" style={{ marginTop: 18, lineHeight: 1.5 }}>{pwOn ? t('Passkeys use {0}. A password works too, where passkeys do not.', bio()) : t('Passkeys use {0}. No passwords to remember.', bio())}</div>
       <div className="dim small" style={{ marginTop: 10, lineHeight: 1.5 }}>{pwOn
         ? t('Lost a passkey? Use another passkey or your password. Password reset needs a code from your app admin; e-mail is not used for recovery.')
         : t('Keep a second passkey or a signed-in device. If you lose every passkey, this app cannot recover the account automatically.')}</div>

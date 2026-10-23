@@ -368,6 +368,10 @@ function credToJSON(cred) {
 // `code` beside their English message; an answer without one (an older server, a verify error)
 // is shown as it came.
 export function passkeyError(e, fallback) {
+  if (e?.code === 'bad-response') return t('The server did not confirm your account. Please try again later.')
+  if (e?.code === 'session-unconfirmed') return t('The server responded, but this browser could not confirm sign-in. Try signing in again. If you just created a profile, do not create a second one yet.')
+  if (e?.status == null && (e?.name === 'TypeError' || e?.code === 'timeout')) return t('Could not reach the server. Check your connection and try again.')
+  if (e?.status >= 500) return t('The server could not complete that request. Please try again later.')
   switch (e?.data?.code) {
     case 'invite': return t('That invite code is not valid.')
     case 'unknown-credential': return t('This server doesn’t know that passkey. Make a profile first.')
@@ -376,11 +380,28 @@ export function passkeyError(e, fallback) {
   }
   return e?.message || fallback
 }
+// A 2xx alone does not establish an account. A misrouted proxy or an incompatible API can
+// answer valid JSON without a user; never switch the local profile on that basis.
+async function authenticatedUser(response) {
+  const user = response?.user
+  if (typeof user?.id !== 'string' || !user.id || typeof user?.name !== 'string' || !user.name) {
+    throw failure(t('The server did not confirm your account. Please try again later.'), 'bad-response', 200)
+  }
+  // Verify the cookie or mobile token actually grants this account before switching local data
+  // ownership. A 200 from /verify may have come through a proxy that dropped Set-Cookie.
+  try {
+    const me = await api('/api/me', { cache: 'no-store' })
+    if (me?.user?.id !== user.id) throw new Error('session mismatch')
+  } catch {
+    throw failure(t('The server responded, but this browser could not confirm sign-in. Try signing in again. If you just created a profile, do not create a second one yet.'), 'session-unconfirmed')
+  }
+  return user
+}
 export async function passkeyRegister(name, code) {
   const { cid, options } = await api('/api/register/options', { method: 'POST', body: JSON.stringify({ name, code: code || '' }) })
   const cred = await navigator.credentials.create({ publicKey: toCreationOptions(options) })
   const res = await api('/api/register/verify', { method: 'POST', body: JSON.stringify({ cid, credential: credToJSON(cred) }) })
-  return res.user
+  return await authenticatedUser(res)
 }
 // One passkey ceremony, not yet sent anywhere: /api/login/verify turns it into a sign-in, and
 // the account routes take it as proof that the owner is here (#118, #95). `signal` calls the
@@ -393,7 +414,7 @@ export async function passkeyAssertion({ signal } = {}) {
 }
 export async function passkeyLogin() {
   const res = await api('/api/login/verify', { method: 'POST', body: JSON.stringify(await passkeyAssertion()) })
-  return res.user
+  return await authenticatedUser(res)
 }
 // A creation ceremony on options the server has already handed out: another passkey for a
 // signed-in profile, or one made with a code from another device (#95, components/Passkeys.jsx).
@@ -413,13 +434,13 @@ const post = (path, body) => api(path, { method: 'POST', body: JSON.stringify(bo
 // the server matches against the profile's sign-in e-mail when it holds an "@" and against the
 // name otherwise — so the app and a server a version apart still understand each other.
 export async function passwordLogin(name, password) {
-  return (await post('/api/login/password', { name, password })).user
+  return await authenticatedUser(await post('/api/login/password', { name, password }))
 }
 // `email` is optional, and sent only when there is one: a server from before the field would
 // otherwise ignore it without a word, which is the same thing.
 export async function passwordRegister(name, password, code, email) {
-  return (await post('/api/register/password', { name, password, code: code || '', ...(email ? { email } : {}) })).user
+  return await authenticatedUser(await post('/api/register/password', { name, password, code: code || '', ...(email ? { email } : {}) }))
 }
 export async function passwordResetRedeem(name, code, next) {
-  return (await post('/api/login/password-reset', { name, code, next })).user
+  return await authenticatedUser(await post('/api/login/password-reset', { name, code, next }))
 }

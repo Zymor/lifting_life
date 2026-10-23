@@ -79,7 +79,7 @@ describe('Login with password sign-in', () => {
     const page = mount(<Login />)
     expect(page.textContent).toContain("This browser doesn't support passkeys. Sign in with your name and password instead.")
     expect(page.textContent).not.toContain('Try a browser or device with passkey support.')
-    expect(buttons(page)).toEqual(['Sign in with password', 'Create new profile'])
+    expect(buttons(page)).toEqual(['Sign in with password', 'Create new profile', 'Need help signing in?'])
     // Creating a profile here can only mean a password: no passkey/password choice to make.
     act(() => button(page, 'Create new profile').click())
     const sheet = mount(mocks.sheets[0](() => {}))
@@ -98,5 +98,17 @@ describe('Login with password sign-in', () => {
     expect(buttons(sheet)).toContain('Create profile')
     expect(sheet.querySelector('input[placeholder="Invite code"]')).toBeTruthy()
     expect(sheet.querySelector('input[autocomplete="new-password"]')).toBeTruthy()
+  })
+
+  it('offers an honest recovery path without promising an e-mail reset or restoring data through a new profile', () => {
+    mocks.config = { password_login: true, allow_guest: true }
+    const page = mount(<Login />)
+    expect(page.textContent).toContain('Where your workouts live')
+    act(() => button(page, 'Need help signing in?').click())
+    const sheet = mount(mocks.sheets[0](() => {}))
+    expect(sheet.querySelector('h3').textContent).toBe('Get back into your profile')
+    expect(sheet.textContent).toContain('Creating a new profile will not bring back the workouts in your old account.')
+    expect(sheet.textContent).toContain('Reset codes are not sent by e-mail.')
+    expect(buttons(sheet)).toContain('Sign in with password')
   })
 })

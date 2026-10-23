@@ -259,22 +259,8 @@ export const DEF = {
     savedPrograms: [],
     activeProgramId: 'powerbuilding-4day',
   },
-  community: {
-    friends: [
-      { id: 'u1', username: 'alex_lifts', displayName: 'Alex Rivera', avatar: '', status: 'friend', bio: 'Powerlifter (IPF 83kg) | Road to 550kg total', recentWorkout: 'Heavy Squats 5x3 @ 135kg' },
-      { id: 'u2', username: 'sarah_strong', displayName: 'Sarah Chen', avatar: '', status: 'friend', bio: 'Powerbuilding & hypertrophy enthusiast', recentWorkout: 'Upper Strength 4x6 Bench @ 75kg' },
-      { id: 'u3', username: 'marcus_iron', displayName: 'Marcus Vance', avatar: '', status: 'pending_incoming', bio: 'Deadlift specialist | 240kg puller', recentWorkout: 'Deadlift speed sets 8x2 @ 180kg' }
-    ],
-    circles: [
-      { id: 'c1', name: 'Powerlifting Heavy Hitters', description: 'Weekly SBD tracking and form checks', memberCount: 14, isOwner: true, targetGoal: '500kg+ Total' },
-      { id: 'c2', name: 'Early Bird Lifters', description: 'Accountability group for 6 AM training sessions', memberCount: 28, isOwner: false, targetGoal: 'Consistency 4x/week' }
-    ],
-    activityFeed: [
-      { id: 'a1', userId: 'u1', username: 'alex_lifts', displayName: 'Alex Rivera', time: '2 hours ago', text: 'Hit a new PR on Competition Squat: 140kg for a clean single @ RPE 9!', likes: 8, comments: 3, lift: 'Squat', weight: 140 },
-      { id: 'a2', userId: 'u2', username: 'sarah_strong', displayName: 'Sarah Chen', time: '5 hours ago', text: 'Completed Week 3 Day 2 of Powerbuilding 4-Day Split. Feeling energized!', likes: 12, comments: 2, program: 'Powerbuilding 4-Day' }
-    ],
-    profilePrivacy: 'public',
-  },
+  // Social connections live on the authenticated server. Workout state never publishes a feed.
+  community: {},
   athleteProfile: {
     username: 'lifter_one',
     displayName: 'Lifting Life Athlete',

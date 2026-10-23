@@ -76,10 +76,9 @@ export default function Home() {
   }
   const onQueueStart = id => { if (S.active) nav('/workout'); else startFlow([id]) }
 
-  // PRs & Community data
+  // PRs
   const prs = S.powerlifting?.prs || {}
   const unit = S.unit || 'kg'
-  const feed = S.community?.activityFeed || []
 
   return (
     <div className="dashboard-content narrow">
@@ -339,25 +338,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* COMMUNITY FEED SNEAK PEEK */}
-      {feed.length > 0 && (
-        <div className="card tappable" style={{ cursor: 'pointer' }} {...tappable(() => nav('/community'))}>
-          <div className="row between" style={{ marginBottom: 8 }}>
-            <div className="row" style={{ gap: 8 }}>
-              <span className="lrow-i" style={{ background: 'var(--purple)' }}><Icon name="chat" /></span>
-              <div>
-                <div className="lbl2">Training Circle & Friends</div>
-                <div className="ttl">Recent Activity</div>
-              </div>
-            </div>
-            <Icon name="chevronRight" className="chev" />
-          </div>
-          <div className="feed-peek-item">
-            <span className="feed-author">{feed[0].displayName}:</span>
-            <span className="feed-text">{feed[0].text}</span>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

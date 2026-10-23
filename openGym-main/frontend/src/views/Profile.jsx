@@ -18,7 +18,6 @@ export default function Profile() {
   const [level, setLevel] = useState(athlete.experienceLevel || 'Intermediate')
   const [weightClass, setWeightClass] = useState(athlete.weightClass || '83kg')
   const [primaryGoal, setPrimaryGoal] = useState(athlete.primaryGoal || 'Powerlifting & Strength')
-  const [privacy, setPrivacy] = useState(S.community?.profilePrivacy || 'public')
 
   const totalSBD = (prs.squat?.weight || 0) + (prs.bench?.weight || 0) + (prs.deadlift?.weight || 0)
 
@@ -33,8 +32,6 @@ export default function Profile() {
       state.athleteProfile.weightClass = weightClass
       state.athleteProfile.primaryGoal = primaryGoal
 
-      if (!state.community) state.community = {}
-      state.community.profilePrivacy = privacy
     })
     setIsEditing(false)
   }
@@ -45,7 +42,7 @@ export default function Profile() {
       <header className="page-header">
         <div className="page-title-wrap">
           <h1 className="page-title">{t('My Athlete Profile')}</h1>
-          <p className="page-subtitle">Personal lifting stats, achievements, and community visibility</p>
+          <p className="page-subtitle">Your personal lifting profile. Workout details are not shared with friends.</p>
         </div>
         <button
           className="primary-action-btn secondary"
@@ -64,12 +61,11 @@ export default function Profile() {
           </div>
           <div className="hero-details">
             <h2>{displayName}</h2>
-            <span className="hero-handle">@{username} • {user?.email || 'Local Athlete'}</span>
+            <span className="hero-handle">{username} • {user?.email || 'Local Athlete'}</span>
             <div className="hero-tags">
               <span className="htag">{level}</span>
               <span className="htag">{weightClass}</span>
               <span className="htag">{primaryGoal}</span>
-              <span className={`htag privacy-${privacy}`}>{privacy.toUpperCase()}</span>
             </div>
           </div>
         </div>
@@ -92,7 +88,7 @@ export default function Profile() {
           </div>
           <div className="sbd-badge highlight">
             <span className="lbl">Total</span>
-            <span className="val">{totalSBD || 420} {unit}</span>
+            <span className="val">{totalSBD || '—'} {totalSBD ? unit : ''}</span>
           </div>
         </div>
       </div>
@@ -113,7 +109,7 @@ export default function Profile() {
                 />
               </div>
               <div className="form-group">
-                <label>Username</label>
+                <label>Local profile label</label>
                 <input
                   type="text"
                   value={username}
@@ -152,14 +148,6 @@ export default function Profile() {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Profile Privacy</label>
-                <select value={privacy} onChange={e => setPrivacy(e.target.value)}>
-                  <option value="public">Public (Visible in search)</option>
-                  <option value="friends">Friends Only</option>
-                  <option value="private">Private</option>
-                </select>
-              </div>
             </div>
 
             <div className="modal-actions-bar">
@@ -180,8 +168,8 @@ export default function Profile() {
 
         <div className="profile-card card" onClick={() => navigate('/community')}>
           <div className="pcard-icon"><Icon name="personCircle" size={24} /></div>
-          <h4>Training Circles & Friends</h4>
-          <p>Manage friend requests, connections, and squad memberships.</p>
+          <h4>Friends</h4>
+          <p>Manage private invite codes, friend requests, and connections.</p>
         </div>
 
         <div className="profile-card card" onClick={() => navigate('/analytics')}>

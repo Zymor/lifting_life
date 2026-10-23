@@ -28,8 +28,10 @@ const mocks = vi.hoisted(() => {
     if (a instanceof Error) throw a
     return a ?? {}
   })
+  state.sync = { status: 'ok', pending: false, lastError: null, lastSynced: 100 }
   state.snapshot = () => ({
     S: {}, config: { password_login: true },
+    sync: state.sync,
     setUser: state.setUser, adoptProfile: state.adoptProfile, pushState: state.pushState, pullState: state.pullState,
   })
   return state
@@ -84,6 +86,7 @@ beforeEach(() => {
   mocks.hasData = false
   mocks.sheets.length = 0
   mocks.answers = {}
+  mocks.sync = { status: 'ok', pending: false, lastError: null, lastSynced: 100 }
   mocks.calls.length = 0
   for (const f of [mocks.toast, mocks.setUser, mocks.adoptProfile, mocks.pushState, mocks.pullState, mocks.passwordLogin,
     mocks.passwordRegister, mocks.passwordResetRedeem, mocks.passkeyAssertion]) f.mockClear()
@@ -100,8 +103,8 @@ describe('passwordError', () => {
     expect(passwordError(fail(409, { code: 'last-way-in' }))).toMatch(/only way into your profile/)
     expect(passwordError(fail(429, { code: 'locked', retryAfter: 120 }))).toBe('Too many attempts. Try again in 2 minutes.')
     expect(passwordError(fail(429, { code: 'locked', retryAfter: 30 }))).toBe('Too many attempts. Try again in 30 seconds.')
-    // No code: what the server said, as it said it.
-    expect(passwordError(fail(500, { error: 'server error' }))).toBe('server error')
+    // A server fault may contain internal details; give the user a stable message instead.
+    expect(passwordError(fail(500, { error: 'server error' }))).toBe('The server could not complete that request. Please try again later.')
   })
 })
 
@@ -136,11 +139,23 @@ describe('PasswordSignInSheet', () => {
     expect(close).not.toHaveBeenCalled()
   })
 
+  it('explains lost network access and keeps the sign-in sheet open', async () => {
+    mocks.passwordLogin.mockRejectedValue(new TypeError('Failed to fetch'))
+    const close = vi.fn()
+    const host = mount(<PasswordSignInSheet close={close} />)
+    type(byPlaceholder(host, 'Name or e-mail'), 'Ana'); type(byPlaceholder(host, 'Password'), 'correct horse battery')
+    await submit(host)
+    expect(alertText(host)).toBe('Could not reach the server. Check your connection and try again.')
+    expect(mocks.setUser).not.toHaveBeenCalled()
+    expect(close).not.toHaveBeenCalled()
+  })
+
   it('redeems a reset code with a new password; a too-short or mistyped one is caught before any request', async () => {
     mocks.passwordResetRedeem.mockResolvedValue({ id: 'u1', name: 'Ana' })
     const host = mount(<PasswordSignInSheet close={() => {}} />)
     act(() => button(host, 'Have a reset code from your admin?').click())
     expect(host.querySelector('h3').textContent).toBe('Reset your password')
+    expect(host.textContent).toContain('The app does not send reset codes by e-mail.')
     type(byPlaceholder(host, 'Name or e-mail'), 'Ana')
     type(byPlaceholder(host, 'Reset code'), 'k7wq-2mzp-4hxa')
     type(byPlaceholder(host, 'New password'), 'short')
@@ -236,7 +251,7 @@ describe('PasswordRegisterForm', () => {
     const mail = byPlaceholder(host, 'E-mail (optional)')
     expect(mail.type).toBe('email')
     expect(mail.getAttribute('autocomplete')).toBe('email')
-    expect(host.textContent).toContain('Lets you sign in with it instead of your name. Nothing is ever sent to it.')
+    expect(host.textContent).toContain('Use this address to sign in instead of your name. We do not send verification or reset e-mails.')
     type(byPlaceholder(host, 'Your name'), 'Cleo')
     type(mail, 'cleo at example')
     type(byPlaceholder(host, 'Password'), 'correct horse battery')
@@ -261,6 +276,21 @@ describe('PasswordRegisterForm', () => {
     type(byPlaceholder(host, 'Repeat the password'), 'correct horse battery')
     await submit(host)
     expect(alertText(host)).toBe('Another profile already signs in with this name.')
+  })
+
+  it('keeps guest data local and reports that the new account has not synced', async () => {
+    mocks.hasData = true
+    mocks.sync = { status: 'offline', pending: true, lastError: { code: 'network' }, lastSynced: 0 }
+    mocks.passwordRegister.mockResolvedValue({ id: 'u9', name: 'Cleo' })
+    const host = mount(<Harness />)
+    type(byPlaceholder(host, 'Your name'), 'Cleo')
+    type(byPlaceholder(host, 'Password'), 'correct horse battery')
+    type(byPlaceholder(host, 'Repeat the password'), 'correct horse battery')
+    await submit(host)
+    expect(mocks.setUser).toHaveBeenCalledWith({ id: 'u9', name: 'Cleo' })
+    expect(mocks.pushState).toHaveBeenCalled()
+    expect(mocks.toast).toHaveBeenCalledWith('Profile created, but your data has not synced yet. It is still on this device. Check the connection status and try syncing again.')
+    expect(mocks.toast).not.toHaveBeenCalledWith(expect.stringContaining('workouts are synced'))
   })
 })
 

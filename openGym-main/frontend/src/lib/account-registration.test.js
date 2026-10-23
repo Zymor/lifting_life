@@ -21,14 +21,14 @@ const setup = (sync, overrides = {}) => {
 
 describe('registration result', () => {
   it('reports guest workouts as synced only after the push is confirmed', async () => {
-    const { calls, actions } = setup({ pending: false, lastError: null })
+    const { calls, actions } = setup({ status: 'ok', pending: false, lastError: null, lastSynced: 100 })
     expect(await finishRegistration(actions)).toBe(true)
     expect(calls.map(([kind]) => kind)).toEqual(['user', 'close', 'push', 'notice'])
     expect(calls.at(-1)[1]).toContain('workouts are synced')
   })
 
   it('keeps the account created when a push is pending or fails', async () => {
-    const { calls, actions } = setup({ pending: true, lastError: { code: 'network' } })
+    const { calls, actions } = setup({ status: 'offline', pending: true, lastError: { code: 'network' }, lastSynced: 0 })
     expect(await finishRegistration(actions)).toBe(false)
     expect(calls.at(-1)[1]).toContain('still on this device')
     const thrown = setup(null, { pushState: async () => { throw new Error('offline') } })
@@ -37,9 +37,16 @@ describe('registration result', () => {
   })
 
   it('pulls an empty profile without claiming guest data moved', async () => {
-    const { calls, actions } = setup({ pending: false, lastError: null }, { hasLocalData: false })
+    const { calls, actions } = setup({ status: 'ok', pending: false, lastError: null, lastSynced: 100 }, { hasLocalData: false })
     expect(await finishRegistration(actions)).toBe(true)
     expect(calls.map(([kind]) => kind)).toEqual(['user', 'close', 'pull', 'notice'])
     expect(calls.at(-1)[1]).toBe('Welcome, Ana')
+  })
+
+  it('does not claim success when sync state is absent or still unconfirmed', async () => {
+    const missing = setup(undefined)
+    expect(await finishRegistration(missing.actions)).toBe(false)
+    const unconfirmed = setup({ status: 'ok', pending: false, lastError: null, lastSynced: 0 })
+    expect(await finishRegistration(unconfirmed.actions)).toBe(false)
   })
 })

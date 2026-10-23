@@ -134,12 +134,15 @@ export function signInAgain() {
 }
 export async function passkeySignIn() {
   const st = useStore.getState()
-  try {
-    const u = await passkeyLogin()
-    st.setUser(u, { adopt: true })
-    await st.adoptProfile(askAddDeviceData)
-    toast(t('Welcome back, {0}', u.name))
-  } catch (e) { if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast(passkeyError(e, t('Sign-in failed'))) }
+  let u
+  try { u = await passkeyLogin() }
+  catch (e) {
+    if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast(passkeyError(e, t('Sign-in failed')))
+    return
+  }
+  st.setUser(u, { adopt: true })
+  try { await st.adoptProfile(askAddDeviceData); toast(t('Welcome back, {0}', u.name)) }
+  catch { toast(t('Signed in. Your device data has not synced yet; check the connection status.')) }
 }
 
 /* ---------------------------------------------------------- leaving the server ---------------

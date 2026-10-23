@@ -7,13 +7,15 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 /* When Disconnect, Sign out or Sign out everywhere fails, the toast says what that action was and
    what still stands: "Sign out everywhere" was the only wording, whichever one had failed. */
-const mocks = vi.hoisted(() => ({ toast: null, disconnectServer: null, signOut: null, signOutAll: null }))
+const mocks = vi.hoisted(() => ({ toast: null, disconnectServer: null, signOut: null, signOutAll: null, passkeyLogin: null, setUser: null, adoptProfile: null }))
 vi.mock('../store/useStore.js', () => {
   const snap = () => ({
     sync: null, config: null, syncNow: async () => null,
     disconnectServer: (...a) => mocks.disconnectServer(...a),
     signOut: (...a) => mocks.signOut(...a),
-    signOutAll: (...a) => mocks.signOutAll(...a)
+    signOutAll: (...a) => mocks.signOutAll(...a),
+    setUser: (...a) => mocks.setUser(...a),
+    adoptProfile: (...a) => mocks.adoptProfile(...a)
   })
   const useStore = selector => (selector ? selector(snap()) : snap())
   useStore.getState = snap
@@ -27,11 +29,11 @@ vi.mock('../store/useUI.js', () => {
 })
 vi.mock('../lib/media-sync.js', () => ({ syncMedia: vi.fn() }))
 vi.mock('../lib/mobile.js', () => ({ MOBILE: false }))
-vi.mock('../lib/api.js', () => ({ passkeyLogin: vi.fn(), webauthnOK: () => true }))
+vi.mock('../lib/api.js', () => ({ passkeyLogin: (...a) => mocks.passkeyLogin(...a), passkeyError: e => e.message, webauthnOK: () => true }))
 vi.mock('../sheets.jsx', () => ({ askAddDeviceData: vi.fn() }))
 vi.mock('../views/MobileOnboarding.jsx', () => ({ ConnectSheet: () => null }))
 
-const { leaveServer, OwedSheet } = await import('./ServerSync.jsx')
+const { leaveServer, OwedSheet, passkeySignIn } = await import('./ServerSync.jsx')
 
 const fail = () => vi.fn(async () => { throw new Error('boom') })
 beforeEach(() => {
@@ -39,6 +41,26 @@ beforeEach(() => {
   mocks.disconnectServer = fail()
   mocks.signOut = fail()
   mocks.signOutAll = fail()
+  mocks.passkeyLogin = vi.fn()
+  mocks.setUser = vi.fn()
+  mocks.adoptProfile = vi.fn()
+})
+
+describe('passkey sign-in and device data', () => {
+  it('does not report sign-in failure after the server authenticated but data adoption failed', async () => {
+    mocks.passkeyLogin.mockResolvedValue({ id: 'u1', name: 'Ana' })
+    mocks.adoptProfile.mockRejectedValue(new Error('offline'))
+    await passkeySignIn()
+    expect(mocks.setUser).toHaveBeenCalledWith({ id: 'u1', name: 'Ana' }, { adopt: true })
+    expect(mocks.toast).toHaveBeenCalledWith('Signed in. Your device data has not synced yet; check the connection status.')
+  })
+
+  it('does not change the local user when passkey verification fails', async () => {
+    mocks.passkeyLogin.mockRejectedValue(new Error('verification failed'))
+    await passkeySignIn()
+    expect(mocks.setUser).not.toHaveBeenCalled()
+    expect(mocks.toast).toHaveBeenCalledWith('verification failed')
+  })
 })
 
 describe('leaving the server, when it fails', () => {

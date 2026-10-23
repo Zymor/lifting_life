@@ -49,6 +49,10 @@ function fmtIn(sec) {
 export function passwordError(e) {
   const code = e?.data?.code
   if (e?.status === 429 || code === 'locked') return t('Too many attempts. Try again {0}.', fmtIn(e?.data?.retryAfter || 60))
+  if (e?.code === 'bad-response') return t('The server did not confirm your account. Please try again later.')
+  if (e?.code === 'session-unconfirmed') return t('The server responded, but this browser could not confirm sign-in. Try signing in again. If you just created a profile, do not create a second one yet.')
+  if (e?.status == null) return t('Could not reach the server. Check your connection and try again.')
+  if (e?.status >= 500) return t('The server could not complete that request. Please try again later.')
   switch (code) {
     case 'bad-credentials': return t('Wrong name, e-mail or password.')
     case 'too-short': return t('Use at least {0} characters.', MIN_PASSWORD)
@@ -111,14 +115,16 @@ export function PasswordSignInSheet({ close, onPasskey }) {
       : null
     if (bad) { setErr(bad); return }
     setBusy(true); setErr(null)
-    try { await signedIn(reset ? await passwordResetRedeem(n, code.trim(), next) : await passwordLogin(n, pw), close) }
-    catch (e) { setErr(passwordError(e)) }
+    let user
+    try { user = reset ? await passwordResetRedeem(n, code.trim(), next) : await passwordLogin(n, pw) }
+    catch (e) { setErr(passwordError(e)); setBusy(false); return }
+    try { await signedIn(user, close) }
     finally { setBusy(false) }
   }
   return <>
     <h3>{reset ? t('Reset your password') : t('Sign in with password')}</h3>
     <div className="muted small" style={{ marginBottom: 14 }}>{reset
-      ? t('Enter the code your admin gave you and choose a new password. It signs you out everywhere else.')
+      ? t('Enter the one-time code your app admin gave you and choose a new password. This signs out your other devices. The app does not send reset codes by e-mail.')
       : t('Use your profile name (or the e-mail you added to it) and your password.')}</div>
     <form onSubmit={submit} noValidate>
       {/* One field for both: the server looks an entry with an "@" up as an e-mail first. Not
@@ -143,11 +149,11 @@ export function PasswordSignInSheet({ close, onPasskey }) {
       <Button type="submit" variant="primary" disabled={busy}>{reset ? t('Set password & sign in') : t('Sign in')}</Button>
     </form>
     <div style={{ height: 8 }} />
-    <Button type="button" variant="ghost" className="dim" onClick={() => { setErr(null); setMode(reset ? 'signin' : 'reset') }}>
+    <Button type="button" variant="ghost" className="dim" disabled={busy} onClick={() => { setErr(null); setMode(reset ? 'signin' : 'reset') }}>
       {reset ? t('Sign in with password') : t('Have a reset code from your admin?')}</Button>
     {onPasskey && !reset && webauthnOK() && <>
       <div style={{ height: 8 }} />
-      <Button type="button" icon="fingerprint" onClick={() => { close(); onPasskey() }}>{t('Sign in with passkey')}</Button>
+      <Button type="button" icon="fingerprint" disabled={busy} onClick={() => { close(); onPasskey() }}>{t('Sign in with passkey')}</Button>
     </>}
   </>
 }
@@ -192,7 +198,7 @@ export function PasswordRegisterForm({ close, inviteOnly, name, setName, code, s
     <div style={{ height: 10 }} />
     <input className="input" type="email" name="email" autoComplete="email" inputMode="email" placeholder={t('E-mail (optional)')} maxLength={254}
       value={email} onChange={e => setEmail(e.target.value)} {...field} />
-    <div className="dim small" style={{ marginTop: 6 }}>{t('Lets you sign in with it instead of your name. Nothing is ever sent to it.')}</div>
+    <div className="dim small" style={{ marginTop: 6 }}>{t('Use this address to sign in instead of your name. We do not send verification or reset e-mails.')}</div>
     {inviteOnly && <>
       <div style={{ height: 10 }} />
       <input className="input" placeholder={t('Invite code')} maxLength={40} value={code}
@@ -219,7 +225,7 @@ function PasswordRegisterSheet({ close }) {
   const [code, setCode] = useState('')
   return <>
     <h3>{t('Create your profile')}</h3>
-    <div className="muted small" style={{ marginBottom: 14 }}>{t('Pick a name and a password. You sign in with both.')}</div>
+    <div className="muted small" style={{ marginBottom: 14 }}>{t('Pick a name and a password. Your workouts stay on this device until the account upload succeeds.')}</div>
     <PasswordRegisterForm close={close} inviteOnly={!!config?.invite_only} name={name} setName={setName} code={code} setCode={setCode} />
   </>
 }

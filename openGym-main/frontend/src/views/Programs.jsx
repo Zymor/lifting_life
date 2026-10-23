@@ -13,13 +13,11 @@ export default function Programs() {
     {
       id: 'pb-4day',
       name: 'Powerbuilding 4-Day Split',
-      author: 'Lifting Life Staff',
+      author: 'Built-in template',
       goal: 'Strength & Hypertrophy',
       level: 'Intermediate',
       duration: '8 Weeks',
       daysPerWeek: 4,
-      saves: 1420,
-      privacy: 'public',
       description: 'The ultimate blend of heavy Big 3 compound progression and bodybuilding volume for complete athletic physique.',
       schedule: [
         { day: 'Day 1 (Monday)', name: 'Upper Strength', exercises: ['Barbell Bench Press (5x3 @ RPE 8.5)', 'Barbell Bent Over Row (4x6)', 'Overhead Press (3x5)', 'Incline Dumbbell Press (3x8)'] },
@@ -32,13 +30,11 @@ export default function Programs() {
     {
       id: 'ppl-6day',
       name: 'Push / Pull / Legs (PPL)',
-      author: 'Alex Rivera (IPF Lifter)',
+      author: 'Built-in template',
       goal: 'Maximum Muscle & Strength',
       level: 'Advanced',
       duration: '12 Weeks',
       daysPerWeek: 6,
-      saves: 980,
-      privacy: 'public',
       description: 'High-frequency 6-day split hitting every major muscle group twice per week with heavy and moderate wave cycles.',
       schedule: [
         { day: 'Day 1', name: 'Push A (Chest / Delts / Triceps)', exercises: ['Barbell Bench Press (4x5)', 'Overhead Dumbbell Press (3x8)', 'Dips (3x10)', 'Lateral Raises (4x15)'] },
@@ -49,13 +45,11 @@ export default function Programs() {
     {
       id: '531-strength',
       name: '5/3/1 Wave Progression Block',
-      author: 'Jim W. Style',
+      author: 'Built-in template',
       goal: 'Pure Strength & Powerlifting',
       level: 'Intermediate - Elite',
       duration: '4 Weeks (with Deload)',
       daysPerWeek: 4,
-      saves: 2150,
-      privacy: 'public',
       description: 'Slow, steady, and guaranteed strength gains using calculated 1RM percentages across 4-week microcycles.',
       schedule: [
         { day: 'Day 1', name: 'Squat Focus', exercises: ['Barbell Squat (5/3/1 Wave)', 'Leg Press (5x10)', 'Hanging Leg Raise (5x15)'] },
@@ -80,7 +74,6 @@ export default function Programs() {
   const [builderLevel, setBuilderLevel] = useState('Intermediate')
   const [builderDuration, setBuilderDuration] = useState('8 Weeks')
   const [builderDays, setBuilderDays] = useState(4)
-  const [builderPrivacy, setBuilderPrivacy] = useState('private')
 
   const myPrograms = S.trainingPrograms?.programs || []
 
@@ -128,7 +121,7 @@ export default function Programs() {
       level: builderLevel,
       duration: builderDuration,
       daysPerWeek: +builderDays,
-      privacy: builderPrivacy,
+      privacy: 'private',
       description: builderDesc,
       schedule: [
         { day: 'Day 1', name: 'Primary Lift & Accessories', exercises: ['Barbell Squat (4x5)', 'Leg Press (3x10)'] },
@@ -186,9 +179,8 @@ export default function Programs() {
               <div className="prog-header">
                 <div className="prog-title-wrap">
                   <h3>{prog.name}</h3>
-                  <span className="prog-author">Created by {prog.author}</span>
+                  <span className="prog-author">{prog.author}</span>
                 </div>
-                <span className="privacy-pill public">PUBLIC</span>
               </div>
 
               <p className="prog-desc">{prog.description}</p>
@@ -351,14 +343,7 @@ export default function Programs() {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Privacy & Sharing</label>
-                <select value={builderPrivacy} onChange={e => setBuilderPrivacy(e.target.value)}>
-                  <option value="private">Private (Only Me)</option>
-                  <option value="friends">Friends Only</option>
-                  <option value="public">Public (Publish to Community)</option>
-                </select>
-              </div>
+              <p className="muted small">Saved programs stay in your own profile. Friend sharing is not available yet.</p>
             </div>
 
             <div className="builder-actions-row">

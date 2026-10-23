@@ -9,7 +9,7 @@ export default function UniversalSearch({ isOpen, onClose }) {
   const navigate = useNavigate()
   const S = useStore(s => s.S)
   const [query, setQuery] = useState('')
-  const [filter, setFilter] = useState('all') // 'all' | 'exercises' | 'programs' | 'athletes'
+  const [filter, setFilter] = useState('all') // 'all' | 'exercises' | 'programs'
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -51,25 +51,6 @@ export default function UniversalSearch({ isOpen, onClose }) {
     return [...builtIn, ...userRoutines].filter(p => p.name.toLowerCase().includes(q) || (p.description && p.description.toLowerCase().includes(q)))
   }, [query, filter, S.routines])
 
-  const athleteResults = useMemo(() => {
-    if (!query.trim() || (filter !== 'all' && filter !== 'athletes')) return []
-    const q = query.toLowerCase()
-    const friends = S.community?.friends || []
-    const directory = [
-      { id: 'u_marcus', username: 'marcus_iron', displayName: 'Marcus Iron', bio: 'Powerlifter | 240kg Deadlift puller' },
-      { id: 'u_alex', username: 'alex_lifts', displayName: 'Alex Rivera', bio: 'IPF 83kg | Road to 550kg total' },
-      { id: 'u_sarah', username: 'sarah_strong', displayName: 'Sarah Chen', bio: 'Powerbuilding athlete & strength coach' },
-      { id: 'u_david', username: 'david_beast', displayName: 'David Miller', bio: 'Squat specialist | 200kg squatter' }
-    ]
-    const merged = [...friends, ...directory]
-    const seen = new Set()
-    return merged.filter(a => {
-      if (seen.has(a.id)) return false
-      seen.add(a.id)
-      return a.username?.toLowerCase().includes(q) || a.displayName?.toLowerCase().includes(q) || a.bio?.toLowerCase().includes(q)
-    })
-  }, [query, filter, S.community])
-
   if (!isOpen) return null
 
   const handleSelectExercise = (ex) => {
@@ -82,12 +63,7 @@ export default function UniversalSearch({ isOpen, onClose }) {
     navigate('/programs')
   }
 
-  const handleSelectAthlete = () => {
-    onClose()
-    navigate('/community')
-  }
-
-  const totalResults = exerciseResults.length + programResults.length + athleteResults.length
+  const totalResults = exerciseResults.length + programResults.length
 
   return (
     <div className="search-overlay" onClick={onClose}>
@@ -98,7 +74,7 @@ export default function UniversalSearch({ isOpen, onClose }) {
             ref={inputRef}
             type="text"
             className="search-input"
-            placeholder={t('Search exercises, programs, athletes...')}
+            placeholder={t('Search exercises and programs...')}
             value={query}
             onChange={e => setQuery(e.target.value)}
           />
@@ -112,14 +88,13 @@ export default function UniversalSearch({ isOpen, onClose }) {
           <button className={`chip ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All</button>
           <button className={`chip ${filter === 'exercises' ? 'active' : ''}`} onClick={() => setFilter('exercises')}>Exercises ({exerciseResults.length})</button>
           <button className={`chip ${filter === 'programs' ? 'active' : ''}`} onClick={() => setFilter('programs')}>Programs ({programResults.length})</button>
-          <button className={`chip ${filter === 'athletes' ? 'active' : ''}`} onClick={() => setFilter('athletes')}>Athletes ({athleteResults.length})</button>
         </div>
 
         {/* Results Area */}
         <div className="search-results-list">
           {!query.trim() ? (
             <div className="search-hint">
-              <p>Type to search across <strong>1,300+ exercises</strong>, structured <strong>training programs</strong>, and the <strong>Lifting Life community</strong>.</p>
+              <p>Type to search exercises and training programs. Friends are added with private codes.</p>
               <div className="quick-suggestions">
                 <span className="suggestion-label">Quick search:</span>
                 <button className="suggestion-pill" onClick={() => setQuery('Squat')}>Squat</button>
@@ -178,29 +153,6 @@ export default function UniversalSearch({ isOpen, onClose }) {
                 </div>
               )}
 
-              {/* Athlete Results */}
-              {athleteResults.length > 0 && (
-                <div className="result-group">
-                  <div className="result-group-title">
-                    <Icon name="person" size={16} />
-                    <span>Athletes & Community</span>
-                  </div>
-                  {athleteResults.map(ath => (
-                    <div key={ath.id} className="search-result-item" onClick={() => handleSelectAthlete(ath)}>
-                      <div className="result-item-avatar">
-                        <Icon name="person" size={18} />
-                      </div>
-                      <div className="result-item-main">
-                        <span className="result-item-title">{ath.displayName || ath.username}</span>
-                        <span className="result-item-sub">@{ath.username} • {ath.bio || 'Lifter'}</span>
-                      </div>
-                      <div className="result-item-action">
-                        <span className="badge">Athlete</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </>
           )}
         </div>
