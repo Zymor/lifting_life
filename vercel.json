@@ -4,15 +4,7 @@
     "api": {
       "root": "openGym-main/api",
       "runtime": "node",
-      "entrypoint": "server.js",
-      "bindings": [
-        {
-          "type": "service",
-          "service": "frontend",
-          "format": "url",
-          "env": "FRONTEND_URL"
-        }
-      ]
+      "entrypoint": "server.js"
     },
     "frontend": {
       "root": "openGym-main/frontend",
@@ -42,4 +34,3 @@
     }
   ]
 }
-
