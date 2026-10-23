@@ -239,15 +239,15 @@ export default function Home() {
         <div className="sbd-quick-row">
           <div className="sbd-quick-item">
             <span className="name">Squat</span>
-            <span className="val">{prs.squat?.weight || 140} {unit}</span>
+            <span className="val">{prs.squat?.weight > 0 ? `${prs.squat.weight} ${unit}` : `—`}</span>
           </div>
           <div className="sbd-quick-item">
             <span className="name">Bench</span>
-            <span className="val">{prs.bench?.weight || 100} {unit}</span>
+            <span className="val">{prs.bench?.weight > 0 ? `${prs.bench.weight} ${unit}` : `—`}</span>
           </div>
           <div className="sbd-quick-item">
             <span className="name">Deadlift</span>
-            <span className="val">{prs.deadlift?.weight || 180} {unit}</span>
+            <span className="val">{prs.deadlift?.weight > 0 ? `${prs.deadlift.weight} ${unit}` : `—`}</span>
           </div>
         </div>
       </div>

@@ -10,13 +10,9 @@ export default function Powerlifting() {
   const { S, update } = useStore()
   const unit = S.unit || 'kg'
 
-  // Big 3 Lifts Data from Store with safe fallbacks
+  // Big 3 records come from saved workouts only.
   const pl = S.powerlifting || {}
-  const prs = pl.prs || {
-    squat: { weight: 140, reps: 1, rpe: 9.5, date: '2026-10-15', e1rm: 142 },
-    bench: { weight: 100, reps: 1, rpe: 9.0, date: '2026-10-18', e1rm: 102 },
-    deadlift: { weight: 180, reps: 1, rpe: 9.5, date: '2026-10-12', e1rm: 184 },
-  }
+  const prs = pl.prs || {}
 
   // Active Tab: 'command' | 'calculator' | '1rm' | 'blocks'
   const [activeTab, setActiveTab] = useState('command')

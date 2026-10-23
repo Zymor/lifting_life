@@ -80,15 +80,15 @@ export default function Profile() {
         <div className="sbd-badges-row">
           <div className="sbd-badge">
             <span className="lbl">Squat</span>
-            <span className="val">{prs.squat?.weight || 140} {unit}</span>
+            <span className="val">{prs.squat?.weight > 0 ? `${prs.squat.weight} ${unit}` : `—`}</span>
           </div>
           <div className="sbd-badge">
             <span className="lbl">Bench Press</span>
-            <span className="val">{prs.bench?.weight || 100} {unit}</span>
+            <span className="val">{prs.bench?.weight > 0 ? `${prs.bench.weight} ${unit}` : `—`}</span>
           </div>
           <div className="sbd-badge">
             <span className="lbl">Deadlift</span>
-            <span className="val">{prs.deadlift?.weight || 180} {unit}</span>
+            <span className="val">{prs.deadlift?.weight > 0 ? `${prs.deadlift.weight} ${unit}` : `—`}</span>
           </div>
           <div className="sbd-badge highlight">
             <span className="lbl">Total</span>
