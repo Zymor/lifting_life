@@ -1,8 +1,0 @@
-{
-  "SUPABASE_URL": "",
-  "APP_ENV": "development",
-  "SUPABASE_PUBLISHABLE_KEY": "",
-  "FACEBOOK_APP_ID": "",
-  "OAUTH_REDIRECT_URI": "io.liftinglife.app://login-callback",
-  "APPLE_SERVICE_ID": ""
-}
